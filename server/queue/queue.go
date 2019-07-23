@@ -2,24 +2,22 @@ package queue
 
 import (
 	"errors"
-        "sync"
-        
-        sh "github.com/sauravgsh16/secoc-third/shared"
+	"sync"
+
+	sh "github.com/sauravgsh16/secoc-third/shared"
 )
 
 //ErrEmptyQueue empty Queue
 var ErrEmptyQueue = errors.New("attempt to get message from empty queue")
 
 type Queue struct {
-	ID   int   // Queue id for reference
 	list *List
 	mux  sync.Mutex
 }
 
-func NewQueue(id int) *Queue {
+func NewQueue() *Queue {
 	l := newList()
 	q := &Queue{
-		ID  : id,
 		list: l,
 	}
 	return q
