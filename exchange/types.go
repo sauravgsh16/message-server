@@ -16,3 +16,9 @@ type writer struct {
 type reader struct {
         io.Reader
 }
+
+type exchangeDeclare struct {
+        Exchange string
+        Type     string
+        store    dataStore
+}

@@ -3,9 +3,20 @@ package main
 import (
         "fmt"
         "net/rpc"
-        "github.com/sauravgsh16/secoc-third/shared"
+        _ "github.com/sauravgsh16/secoc-third/shared"
 )
 
+func main() {
+        c, err := rpc.Dial("tcp", ":9001")
+        if err != nil {
+                fmt.Println(err)
+                return
+        }
+        defer c.Close()
+        fmt.Printf("Connected to server")
+}
+
+/*
 func main() {
         c, err := rpc.Dial("tcp", ":1234")
         if err != nil {
@@ -39,3 +50,4 @@ func main() {
 
         fmt.Printf("Reply r2: %+v\n", r2)
 }
+*/

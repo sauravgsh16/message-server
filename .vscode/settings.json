@@ -18,5 +18,6 @@
     "[python]": {
         "editor.insertSpaces": false,
         "editor.tabSize": 4
-    }
+    },
+    "python.pythonPath": "C:\\Python27\\python.exe"
 }
