@@ -20,5 +20,5 @@ type reader struct {
 type exchangeDeclare struct {
         Exchange string
         Type     string
-        store    dataStore
+        store    *dataStore
 }

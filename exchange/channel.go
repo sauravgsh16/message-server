@@ -25,7 +25,8 @@ func newChannel(c *Connection, id int) *Channel {
 func (ch *Channel) DeclareExchange(name, extype string) {
         ex := &exchangeDeclare{
                 Exchange: name,
-                Type:     extype,
+                Type:     extype,  // Implement validator of type
+                store:    &dataStore{receiver: make([]string, 0)},
         }
         ch.Exchanges[name] = ex
 }
