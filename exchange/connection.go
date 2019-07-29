@@ -1,15 +1,23 @@
 package exchange
 
 import (
+        "bufio"
+        "io"
         "net"
-        "net/rpc"
         "errors"
+        "sync"
+        "time"
+)
+
+const (
+        defaultConnTimeout = 30 * time.Second
 )
 
 var errMaxChannel = errors.New("max number of channels allocated")
 
 type Connection struct {
-        conn      *rpc.Client
+        mux       sync.Mutex
+        conn      io.ReadWriteCloser
         writer    *writer
         channels  map[int]*Channel
         allocator *allocator
@@ -40,26 +48,33 @@ func dial(url string) (*Connection, error) {
                 return nil, err
         }
         addr := net.JoinHostPort(u.host, u.port)
-        conn, err := dialer("tcp", addr)
+        conn, err := dialer("tcp", addr, defaultConnTimeout)
         if err != nil {
                 return nil, err
         }
         return open(conn), nil
 }
 
-func dialer(network, addr string) (*rpc.Client, error) {
-        conn, err := rpc.Dial(network, addr)
+func dialer(network, addr string, timeout time.Duration) (net.Conn, error) {
+        conn, err := net.DialTimeout(network, addr, timeout)
         if err != nil {
                 return nil, err
         }
         return conn, nil
 }
 
-func open(conn *rpc.Client) *Connection {
+func open(conn io.ReadWriteCloser) *Connection {
         c := &Connection{
                 conn:      conn,
                 channels:  make(map[int]*Channel),
                 allocator: newAllocator(),
+                writer:    &writer{bufio.NewWriter(conn)},
         }
+        go c.reader(conn)
         return c
+}
+
+func (c *Connection) reader(r io.Reader) {
+        buf := bufio.NewReader(r)
+        _ = &reader{buf}
 }

@@ -10,15 +10,16 @@ type message interface {
 }
 
 type writer struct {
-        io.Writer
+        w io.Writer
 }
 
 type reader struct {
-        io.Reader
+        r io.Reader
 }
 
 type exchangeDeclare struct {
         Exchange string
         Type     string
-        store    *dataStore
 }
+
+type exchangeDeclareOk struct {}
