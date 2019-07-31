@@ -1,4 +1,4 @@
-package exchange
+package broker
 
 import (
         "sync"
@@ -11,6 +11,7 @@ type Channel struct {
         rpc        chan message
         Exchanges  map[string]*exchangeDeclare
 }
+
 
 func newChannel(c *Connection, id int) *Channel {
         ch := &Channel{
