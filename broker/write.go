@@ -1,6 +1,7 @@
 package broker
 
 import (
+        "io"
         "bufio"
 )
 
@@ -15,5 +16,13 @@ func (w *writer) WriteFrame(f frame) error {
                         return err
                 }
         }
+        return nil
+}
+
+func (f *bodyFrame) write(w io.Writer) error {
+        return writeFrame(w, f.ChannelId, f.Body)
+}
+
+func writeFrame(w io.Writer, channel uint16, payload []byte) error {
         return nil
 }
