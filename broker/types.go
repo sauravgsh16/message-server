@@ -6,6 +6,7 @@ import (
 )
 
 const (
+        frameEnd     = 206
         FrameError   = 501
         ChannelError = 504
 )
@@ -16,8 +17,14 @@ var (
 )
 
 type message interface {
-      read(io.Reader) error
-      write(io.Writer) error  
+        read(io.Reader) error
+        write(io.Writer) error  
+}
+
+type messageWithContent interface {
+        message
+        getContent() (properties, []byte)
+        setContent(properties, []byte)
 }
 
 type frame interface {
@@ -32,13 +39,16 @@ type reader struct {
         r io.Reader
 }
 
-type exchangeDeclare struct {
-        Exchange string
-        Type     string
+type methodFrame struct {
+        ChannelId uint16
+        Method    message
 }
 
-type exchangeDeclareOk struct {}
-
+type headerFrame struct {
+        ChannelId  uint16
+        Size       uint64
+        Properties properties
+}
 
 type bodyFrame struct {
         ChannelId uint16
@@ -47,6 +57,16 @@ type bodyFrame struct {
 
 func (f *bodyFrame) channel() uint16 { return f.ChannelId }
 
+type Publishing struct {
+        UserId    string
+        MessageId string
+        Body      []byte
+}
+
+type properties struct {
+        UserId    string
+        MessageId string
+}
 
 type Error struct {
         Code   int     // constant code

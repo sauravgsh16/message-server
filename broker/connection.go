@@ -17,12 +17,16 @@ const (
 var errMaxChannel = errors.New("max number of channels allocated")
 
 type Connection struct {
-        sendMux   sync.Mutex
-        conn      io.ReadWriteCloser
-        writer    *writer
-        channels  map[int]*Channel
-        allocator *allocator
-        closed    int32 // 1 for closed, 0 otherwise
+        destructor sync.Once
+        mux        sync.Mutex
+        sendMux    sync.Mutex
+        conn       io.ReadWriteCloser
+        writer     *writer
+        channels   map[int]*Channel
+        allocator  *allocator
+        closed     int32 // 1 for closed, 0 otherwise
+        closes     []chan *Error
+        errors     chan *Error
 }
 
 func (c *Connection) Channel() (*Channel, error) {
@@ -30,7 +34,7 @@ func (c *Connection) Channel() (*Channel, error) {
         if !ok {
                 return nil, errMaxChannel
         }
-        ch := newChannel(c, id)
+        ch := newChannel(c, uint16(id))
         c.channels[id] = ch
         return ch, nil
 }
@@ -48,16 +52,41 @@ func (c *Connection) send(f frame) error {
                         Reason: err.Error(),
                 })
         }
-        return nil
+        return err
 }
+
+func (c *Connection) shutdown(err *Error) {
+        atomic.StoreInt32(&c.closed, 1)
+
+        c.destructor.Do(func() {
+                c.mux.Lock()
+                defer c.mux.Unlock()
+
+                if err != nil {
+                        for _, c := range c.closes {
+                                c <- err
+                        }
+                }
+
+                if err != nil {
+                        c.errors <- err
+                }
+
+                close(c.errors)
+
+                for _, c := range c.closes {
+                        close(c)
+                }
+
+                // Shutdown the channel
+                for _, ch := range c.channels {
+                        ch.shutdown(err)
+                }
+        })
+} 
 
 func (c *Connection) IsClosed() bool {
         return atomic.LoadInt32(&c.closed) == 1
-}
-
-
-func (c *Connection) shutdown(err *Error) {
-        // TODO
 }
 
 func (c *Connection) demux(f frame) {
