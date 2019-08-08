@@ -8,13 +8,15 @@ import (
         "sync"
         "time"
         "sync/atomic"
+
+        "github.com/sauravgsh16/secoc-third/allocate"
 )
 
 const (
         defaultConnTimeout = 30 * time.Second
 )
 
-var errMaxChannel = errors.New("max number of channels allocated")
+var ErrMaxChannel = errors.New("max number of channels allocated")
 
 type Connection struct {
         destructor sync.Once
@@ -23,16 +25,16 @@ type Connection struct {
         conn       io.ReadWriteCloser
         writer     *writer
         channels   map[int]*Channel
-        allocator  *allocator
+        allocator  *allocate.Allocator
         closed     int32 // 1 for closed, 0 otherwise
         closes     []chan *Error
         errors     chan *Error
 }
 
 func (c *Connection) Channel() (*Channel, error) {
-        id, ok := c.allocator.next()
+        id, ok := c.allocator.Next()
         if !ok {
-                return nil, errMaxChannel
+                return nil, ErrMaxChannel
         }
         ch := newChannel(c, uint16(id))
         c.channels[id] = ch
@@ -138,7 +140,7 @@ func open(conn io.ReadWriteCloser) *Connection {
         c := &Connection{
                 conn:      conn,
                 channels:  make(map[int]*Channel),
-                allocator: newAllocator(),
+                allocator: allocate.NewAllocator(),
                 writer:    &writer{bufio.NewWriter(conn)},
         }
         // Read data being written on the connection in separate goroutine

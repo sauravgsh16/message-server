@@ -1,4 +1,4 @@
-package broker
+package allocate
 
 import (
         "math/big"
@@ -8,15 +8,15 @@ const (
         max       = 200 // max possible allocations
         allocated = 1   // allocated bit mark
 )
-type allocator struct {
+type Allocator struct {
         pool *big.Int
         last int
         low  int
         high int
 }
 
-func newAllocator() *allocator {
-        al := &allocator{
+func NewAllocator() *Allocator {
+        al := &Allocator{
                 pool: big.NewInt(0),
                 last: min,
                 low:  min,
@@ -25,7 +25,7 @@ func newAllocator() *allocator {
         return al
 }
 
-func (a *allocator) next() (int, bool) {
+func (a *Allocator) Next() (int, bool) {
         for ; a.last <= a.high; a.last++ {
                 if a.reserve(a.last) {
                         return a.last, true
@@ -36,7 +36,7 @@ func (a *allocator) next() (int, bool) {
         return 0, false
 }
 
-func (a *allocator) reserve(n int) bool {
+func (a *Allocator) reserve(n int) bool {
         if a.reserved(n) {
                 return false
         }
@@ -44,6 +44,6 @@ func (a *allocator) reserve(n int) bool {
         return true
 }
 
-func (a *allocator) reserved(n int) bool {
+func (a *Allocator) reserved(n int) bool {
         return a.pool.Bit(n-a.low) == allocated
 }
