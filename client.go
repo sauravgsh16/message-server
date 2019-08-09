@@ -2,17 +2,23 @@ package main
 
 import (
         "fmt"
-        "net/rpc"
+        "net"
+        "strconv"
+
         _ "github.com/sauravgsh16/secoc-third/shared"
 )
 
 func main() {
-        c, err := rpc.Dial("tcp", ":9001")
+        c, err := net.Dial("tcp", ":9000")
         if err != nil {
                 fmt.Println(err)
                 return
         }
         defer c.Close()
+        text := "Hello, World"
+        size := strconv.Itoa(len(text))
+        c.Write([]byte(size))
+        c.Write([]byte(text))
         fmt.Printf("Connected to server")
 }
 
