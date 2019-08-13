@@ -53,6 +53,20 @@ func ReadShort(buf io.Reader) (data uint16, err error) {
         return data, nil
 }
 
+func ReadLong(buf io.Reader) (data uint32, err error) {
+        if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+                return 0, errors.New("Could not read uint32: " + err.Error())
+        }
+        return data, nil
+}
+
+func ReadLongLong(buf io.Reader) (data uint64, err error) {
+        if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+                return 0, errors.New("could not read uint64: " + err.Error())
+        }
+        return data, nil
+}
+
 func ReadMethod(io.Reader) (m MethodFrame, err error) {
         return
 }

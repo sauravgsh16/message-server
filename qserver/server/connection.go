@@ -1,6 +1,7 @@
 package server
 
 import (
+        "fmt"
         "net"
         "sync"
         "sync/atomic"
@@ -11,9 +12,6 @@ import (
         "github.com/sauravgsh16/secoc-third/qserver/proto"
 )
 
-// Below struct to have their own files
-
-// ***** END *********
 
 var counter int64
 
@@ -26,27 +24,93 @@ func nextId() int64 {
         return atomic.AddInt64(&counter, 1)
 }
 
+type ConnectionStatus struct {
+        start   bool
+        open    bool
+        closing bool
+        closed  bool
+}
+
 type Connection struct {
         id        int64
-        channels  map[uint64]*Channel
+        channels  map[uint16]*Channel
         outgoing  chan *proto.WireFrame
         server    *Server
         network   net.Conn
         mux       sync.Mutex
         allocator allocate.Allocator
+        status    ConnectionStatus
 }
 
 func NewConnection(s *Server, n net.Conn) *Connection {
         return &Connection{
                 id:       nextId(),
-                channels: make(map[uint64]*Channel),
+                channels: make(map[uint16]*Channel),
                 outgoing: make(chan *proto.WireFrame, 100),
                 server:   s,
-                network:  n,       
+                network:  n,
+                status:   ConnectionStatus{},
         }
 }
 
 func (conn *Connection) openConnection() {
         // Create channel 0 and start the connection handshake
         conn.channels[0] = NewChannel(0, conn)
+        conn.channels[0].start()
+        conn.handleOutgoing()
+        conn.handleIncoming()
+}
+
+func (conn *Connection) hardClose() {
+        conn.network.Close()
+        conn.status.closed = true
+        // TODO IMPORTANT *****************
+        // *****************************************************
+        // DeleteQueues associated with connection
+        // Shutdown channels associated with conn
+        // Register Connection on server
+        // *****************************************************
+}
+
+func (conn *Connection) handleIncoming() {
+        for {
+                if conn.status.closed {
+                        break
+                }
+                frame, err := proto.ReadFrame(conn.network)
+                if err != nil {
+                        fmt.Printf("Error reading frame: %s", err.Error())
+                        conn.hardClose()
+                        break
+                }
+                conn.handleFrame(frame)
+        }
+}
+
+func (conn *Connection) handleOutgoing() {
+        go func() {
+                for {
+                        if conn.status.closed {
+                                break
+                        }
+                        frame := <-conn.outgoing
+                        proto.WriteFrame(frame)
+                }
+        }()
+}
+
+func (conn *Connection) handleFrame(f *proto.WireFrame) {
+        // if !conn.status.open && f.Channel != 0 {
+        if !conn.status.open {
+                conn.hardClose()
+                return
+        }
+        channel, ok := conn.channels[f.Channel]
+        if !ok {
+                channel = NewChannel(f.Channel, conn)
+                conn.channels[f.Channel] = channel
+                conn.channels[f.Channel].start()
+        }
+        // Dispatch frame to channel
+        channel.incoming <- f
 }
