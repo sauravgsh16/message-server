@@ -25,10 +25,13 @@ func nextId() int64 {
 }
 
 type ConnectionStatus struct {
-        start   bool
-        open    bool
-        closing bool
-        closed  bool
+        start    bool
+        startOk  bool
+        open     bool
+        openOk   bool
+        closing  bool
+        closed   bool
+        closedOk bool
 }
 
 type Connection struct {

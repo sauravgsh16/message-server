@@ -4,6 +4,7 @@ import (
         "bytes"
         "encoding/binary"
         "errors"
+        "fmt"
         "io"
 )
 
@@ -65,6 +66,26 @@ func ReadLongLong(buf io.Reader) (data uint64, err error) {
                 return 0, errors.New("could not read uint64: " + err.Error())
         }
         return data, nil
+}
+
+func readLongStr(buf io.Reader) ([]byte, error) {
+        var length uint32
+        if err := binary.Read(buf, binary.BigEndian, &length); err != nil {
+                return nil, err
+        }
+        var slice = make([]byte, length)
+        if err := binary.Read(buf, binary.BigEndian, slice); err != nil {
+                return nil, err
+        }
+        return slice, nil
+}
+
+func ReadLongStr(buf io.Reader) (string, error) {
+        slice, err := readLongStr(buf)
+        if err != nil {
+                return "", err
+        }
+        return fmt.Sprintf("%s", slice), nil
 }
 
 func ReadMethod(io.Reader) (m MethodFrame, err error) {

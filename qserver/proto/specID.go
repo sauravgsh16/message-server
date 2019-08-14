@@ -31,6 +31,7 @@ var s SpecMap
 func init() {
         classes := []string{"connection", "channel"}
         classInit(classes)
+        methodsInit()
 }
 
 func classInit(classes []string) {
@@ -41,6 +42,9 @@ func classInit(classes []string) {
         }
 }
 
+func methodsInit() {
+
+}
 
 /*
 connection - 10 class

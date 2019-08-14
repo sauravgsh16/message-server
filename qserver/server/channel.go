@@ -43,8 +43,6 @@ func NewChannel(id uint16, conn *Connection) *Channel {
         }
 }
 
-func (ch *Channel) startConnection() {}
-
 func (ch *Channel) start() {
         if ch.state == 0 {
                 ch.state = CH_OPEN
@@ -80,6 +78,12 @@ func (ch *Channel) start() {
                         }
                 }
         }()
+}
+
+func (ch *Channel) SendMethod(m proto.MethodFrame) {
+        buf := bytes.NewBuffer([]byte{})
+        m.Write(buf)
+        ch.outgoing <- &proto.WireFrame{uint8(proto.FrameMethod), ch.id, buf.Bytes()}
 }
 
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
