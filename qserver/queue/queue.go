@@ -3,6 +3,7 @@ package queue
 import (
 	"sync"
 
+	"github.com/sauravgsh16/secoc-third/qserver/consumer"
 	sh "github.com/sauravgsh16/secoc-third/shared"
 )
 
@@ -13,21 +14,32 @@ type qData struct {
 }
 
 type Queue struct {
-        Name string
-	list *List
-        mux  sync.Mutex
-        In   chan sh.Message
-	Out  chan sh.Message
+        Name         string
+	list         *List
+	mux          sync.Mutex
+        In           chan sh.Message
+	Out          chan sh.Message
+	consumers    []*consumer.Consumer
+	ConnId       int64
+	deleteChan   chan *Queue
+	qLock        sync.Mutex
+	consumerLock sync.RWMutex
 }
 
-func NewQueue(name string) *Queue {
+func NewQueue(name string, connId int64, deleteChan chan *Queue) *Queue {
 	q := &Queue{
                 Name: name,
                 In:   make(chan sh.Message),
 		Out:  make(chan sh.Message),
+		consumers:  make([]*consumer.Consumer, 0),
+		deleteChan: deleteChan,
 	}
 	go q.datapump()
 	return q
+}
+
+func (q *Queue) ConsumerCount() uint32 {
+	return uint32(len(q.consumers))
 }
 
 func (q *Queue) datapump() {

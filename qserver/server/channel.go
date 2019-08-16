@@ -26,20 +26,23 @@ type Channel struct {
         incoming       chan *proto.WireFrame
         outgoing       chan *proto.WireFrame
         conn           *Connection
-        consumer       map[string]*Consumer
+        consumers      map[string]*Consumer
         sendLock       sync.Mutex
         state          uint8
         currentMessage *proto.Message
+        flow           bool
+        usedQueueName  string
 }
 
 func NewChannel(id uint16, conn *Connection) *Channel {
         return &Channel{
-                id:       id,
-                server:   conn.server,
-                incoming: make(chan *proto.WireFrame),
-                outgoing: conn.outgoing,
-                conn:     conn,
-                consumer: make(map[string]*Consumer),
+                id:        id,
+                server:    conn.server,
+                incoming:  make(chan *proto.WireFrame),
+                outgoing:  conn.outgoing,
+                conn:      conn,
+                consumers: make(map[string]*Consumer),
+                flow:      true,
         }
 }
 
@@ -86,8 +89,59 @@ func (ch *Channel) SendMethod(m proto.MethodFrame) {
         ch.outgoing <- &proto.WireFrame{uint8(proto.FrameMethod), ch.id, buf.Bytes()}
 }
 
+func (ch *Channel) sendError(err *proto.ProtoError) {
+        if err.Soft {
+                fmt.Println("Sending channel error: ", err.Msg)
+                ch.state = CH_CLOSING
+                ch.SendMethod(&proto.ChannelClose{
+                        ReplyCode: err.Code,
+                        ReplyText: err.Msg,
+                        ClassId:   err.Class,
+                        MethodId:  err.Method,
+                })
+        } else {
+                ch.conn.closeConnWithError(err)
+        }
+}
+
+func (ch *Channel) updateFlow(active bool) {
+        if ch.flow == active {
+                return
+        }
+        // Change flow to active
+        ch.flow = active
+        // Ping Consumers to start work again, if possible
+        if ch.flow {
+                for _, consumer := range ch.consumers {
+                        // *********************
+                        // NEED TO IMPLEMENT
+                        // *********************
+                }
+        }
+}
+
+func (ch *Channel) shutdown() {
+        if ch.state == CH_CLOSED {
+                fmt.Printf("channel already closed, shutdown performed on %d\n", ch.id)
+                return
+        }
+        ch.state = CH_CLOSED
+        // unregister channel from connection
+        ch.conn.removeChannel(ch.id)
+        // remove any consumer associated with this channel
+        for _, consumer := range ch.consumers {
+                // ********************
+                // NEED TO IMPLEMENT
+                // ********************
+        }
+}
+
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
         var methodReader = bytes.NewReader(frame.Payload)
+
+        // ***************** IMPLEMENT BELOW **************
+        //                   ReadMethod 
+        // ************************************************
         var methodFrame, err = proto.ReadMethod(methodReader)  // TODO - TO BE IMPLEMENTED - ReadMethod
         if err != nil {
                 return proto.NewHardError(500, err.Error(), 0, 0)

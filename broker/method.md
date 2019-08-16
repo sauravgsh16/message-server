@@ -1,3 +1,45 @@
+
+MY IMPLEMENTATION
+connection - class 10
+    method:
+        connectionStart    - 10
+        connectionStartOk  - 11
+        connectionOpen     - 20
+        connectionOpenOk   - 21
+        connectionClose    - 30
+        connectionCloseOk  - 31
+channel - class 20
+    method:
+        channelOpen - 10
+        channelOpenOk - 11
+        channelFlow - 20
+        channelFlowOk - 21
+        channelClose - 30
+        channelCloseOk - 31
+exchange - class 30
+    method:
+        exchangeDeclare - 10
+        exchangeDeclareOk  - 11
+        exchangeDelete - 20
+        exchangeDeleteOk - 21
+        exchangeBind  - 30
+        exchangeBindOk - 31
+        exchangeUnbind - 40
+        exchangeUnbindOk - 41
+queue - class 40
+    method:
+        queueDeclare - 10
+        queueDeclareOk - 11
+        queueBind      - 20
+        queueBindOk    - 21
+        queueUnbind    - 30
+        queueUnbindOk  - 31
+        queueDelete    - 40
+        queueDeleteOk  - 41
+
+
+***************************************
+
 connection - 10 class
     method:
         connectionStart    - 10
@@ -18,8 +60,8 @@ channel - 20 class
         channelOpenOk - 11
         channelFlow - 20
         channelFlowOk - 21
-        channelClose - 40
-        channelCloseOk - 41
+        channelClose - 30
+        channelCloseOk - 31
 exchange - 40 class
     method:
         exchangeDeclare - 10

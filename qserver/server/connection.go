@@ -75,6 +75,21 @@ func (conn *Connection) hardClose() {
         // *****************************************************
 }
 
+func (conn *Connection) closeConnWithError(err *proto.ProtoError) {
+        fmt.Println("Sending connection close: ", err.Msg)
+        conn.status.closing = true
+        conn.channels[0].SendMethod(&proto.ConnectionClose{
+                ReplyCode: err.Code,
+                ReplyText: err.Msg,
+                ClassId:   err.Class,
+                MethodId:  err.Method,
+        })
+}
+
+func (conn *Connection) removeChannel(chId uint16) {
+        delete(conn.channels, chId)
+}
+
 func (conn *Connection) handleIncoming() {
         for {
                 if conn.status.closed {

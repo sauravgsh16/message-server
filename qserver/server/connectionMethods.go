@@ -7,11 +7,9 @@ import (
 func (ch *Channel) connectionRoute(conn *Connection, mf proto.MethodFrame) *proto.ProtoError {
         switch method := mf.(type) {
         case *proto.ConnectionStartOk:
-                return connectionStartOk(conn, method)
+                return ch.connectionStartOk(conn, method)
         case *proto.ConnectionOpen:
                 return ch.connectionOpen(conn, method)
-        case *proto.ConnectionCloseOk:
-                return ch.connectionOpenOk(conn, method)
         case *proto.ConnectionClose:
                 return ch.connectionClose(conn, method)
         case *proto.ConnectionCloseOk:
@@ -40,7 +38,19 @@ func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) 
 
 func (ch *Channel) startConnection() *proto.ProtoError {
         ch.SendMethod(&proto.ConnectionStart{
-                Version:   0,
+                Version:   1,
                 Mechanism: "PLAIN",
         })
+        return nil
+}
+
+func (ch *Channel) connectionClose(c *Connection, m *proto.ConnectionClose) *proto.ProtoError {
+        ch.SendMethod(&proto.ConnectionCloseOk{})
+        c.hardClose()
+        return nil
+}
+
+func (ch *Channel) connectionCloseOk(c *Connection, m *proto.ConnectionCloseOk) *proto.ProtoError {
+        c.hardClose()
+        return nil
 }
