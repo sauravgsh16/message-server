@@ -31,8 +31,8 @@ func (ch *Channel) channelOpen(m *proto.ChannelOpen) *proto.ProtoError {
 }
 
 func (ch *Channel) channelFlow(m *proto.ChannelFlow) *proto.ProtoError {
-	ch.updateFlow(m.Active)
-	ch.SendMethod(&proto.ChannelFlowOk{ch.flow})
+	ch.activateFlow(m.Active)
+	ch.SendMethod(&proto.ChannelFlowOk{Active: ch.flow})
 	return nil
 }
 

@@ -66,12 +66,11 @@ func (conn *Connection) openConnection() {
 func (conn *Connection) hardClose() {
 	conn.network.Close()
 	conn.status.closed = true
-	// TODO IMPORTANT *****************
-	// *****************************************************
-	// DeleteQueues associated with connection
-	// Shutdown channels associated with conn
-	// Register Connection on server
-	// *****************************************************
+	conn.server.deleteConnection(conn.id)
+	conn.server.deleteRegisteredQueues(conn.id)
+	for _, ch := range conn.channels {
+		ch.shutdown()
+	}
 }
 
 func (conn *Connection) closeConnWithError(err *proto.ProtoError) {

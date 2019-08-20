@@ -66,7 +66,7 @@ func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.ProtoError {
 }
 
 func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.ProtoError {
-	ex, found := ch.server.exchanges[m.Exchange]
+	_, found := ch.server.exchanges[m.Exchange]
 	if !found {
 		clsID, mtdID := m.MethodIdentifier()
 		return proto.NewSoftError(404, "Exchange not found", clsID, mtdID)

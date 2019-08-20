@@ -2,41 +2,51 @@
 MY IMPLEMENTATION
 connection - class 10
     method:
-        connectionStart    - 10
-        connectionStartOk  - 11
-        connectionOpen     - 20
-        connectionOpenOk   - 21
-        connectionClose    - 30
-        connectionCloseOk  - 31
+        ConnectionStart    - 10
+        ConnectionStartOk  - 11
+        ConnectionOpen     - 20
+        ConnectionOpenOk   - 21
+        ConnectionClose    - 30
+        ConnectionCloseOk  - 31
 channel - class 20
     method:
-        channelOpen - 10
-        channelOpenOk - 11
-        channelFlow - 20
-        channelFlowOk - 21
-        channelClose - 30
-        channelCloseOk - 31
+        ChannelOpen - 10
+        ChannelOpenOk - 11
+        ChannelFlow - 20
+        ChannelFlowOk - 21
+        ChannelClose - 30
+        ChannelCloseOk - 31
 exchange - class 30
     method:
-        exchangeDeclare - 10
-        exchangeDeclareOk  - 11
-        exchangeDelete - 20
-        exchangeDeleteOk - 21
-        exchangeBind  - 30
-        exchangeBindOk - 31
-        exchangeUnbind - 40
-        exchangeUnbindOk - 41
+        ExchangeDeclare - 10
+        ExchangeDeclareOk  - 11
+        ExchangeDelete - 20
+        ExchangeDeleteOk - 21
+        ExchangeBind  - 30
+        ExchangeBindOk - 31
+        ExchangeUnbind - 40
+        ExchangeUnbindOk - 41
 queue - class 40
     method:
-        queueDeclare - 10
-        queueDeclareOk - 11
-        queueBind      - 20
-        queueBindOk    - 21
-        queueUnbind    - 30
-        queueUnbindOk  - 31
-        queueDelete    - 40
-        queueDeleteOk  - 41
-
+        QueueDeclare - 10
+        QueueDeclareOk - 11
+        QueueBind      - 20
+        QueueBindOk    - 21
+        QueueUnbind    - 30
+        QueueUnbindOk  - 31
+        QueueDelete    - 40
+        QueueDeleteOk  - 41
+Qos - class 50
+    method:
+        basicConsume - 10
+        basicConsumeOk - 11
+        basicCancel - 20
+        basicCancelOk - 21
+        basicPublish - 30
+        basicReturn  - 40
+        basicDeliver - 50
+        basicAck     - 60
+        basicNack    - 70
 
 ***************************************
 

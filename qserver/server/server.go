@@ -92,6 +92,10 @@ func (s *Server) removeQueueBindings(qName string) {
 	}
 }
 
+func (s *Server) deleteConnection(connID int64) {
+	delete(s.conns, connID)
+}
+
 func (s *Server) OpenConnection(conn net.Conn) {
 	c := NewConnection(s, conn)
 	s.conns[c.id] = c

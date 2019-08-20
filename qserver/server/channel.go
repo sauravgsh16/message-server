@@ -114,7 +114,7 @@ func (ch *Channel) sendError(err *proto.ProtoError) {
 	}
 }
 
-func (ch *Channel) updateFlow(active bool) {
+func (ch *Channel) activateFlow(active bool) {
 	if ch.flow == active {
 		return
 	}
@@ -122,11 +122,8 @@ func (ch *Channel) updateFlow(active bool) {
 	ch.flow = active
 	// Ping Consumers to start work again, if possible
 	if ch.flow {
-		for _, consumer := range ch.consumers {
-			// *********************
-			// NEED TO IMPLEMENT
-			// *********************
-			fmt.Printf("%v", consumer)
+		for _, c := range ch.consumers {
+			c.Ping()
 		}
 	}
 }
@@ -139,7 +136,6 @@ func (ch *Channel) GetDeliveryTag() uint64 {
 	return ch.deliveryTag
 }
 
-// cr ConsumerResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool
 func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.ProtoError {
 	clsID, mtdID := m.MethodIdentifier()
 
@@ -180,7 +176,7 @@ func (ch *Channel) removeConsumer(consumerTag string) error {
 }
 
 func (ch *Channel) publish(m *proto.BasicPublish) {
-
+	ch.currentMessage = proto.NewMessage(m)
 }
 
 func (ch *Channel) shutdown() {
@@ -192,24 +188,19 @@ func (ch *Channel) shutdown() {
 	// unregister channel from connection
 	ch.conn.removeChannel(ch.id)
 	// remove any consumer associated with this channel
-	for _, consumer := range ch.consumers {
-		// ********************
-		// NEED TO IMPLEMENT
-		// ********************
-		fmt.Printf("%v", consumer)
+	for _, c := range ch.consumers {
+		ch.removeConsumer(c.ConsumerTag)
 	}
 }
 
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
 	var methodReader = bytes.NewReader(frame.Payload)
 
-	// ***************** IMPLEMENT BELOW **************
-	//                   ReadMethod
-	// ************************************************
-	var methodFrame, err = proto.ReadMethod(methodReader) // TODO - TO BE IMPLEMENTED - ReadMethod
+	var methodFrame, err = proto.ReadMethod(methodReader)
 	if err != nil {
 		return proto.NewHardError(500, err.Error(), 0, 0)
 	}
+
 	var classId, methodId = methodFrame.MethodIdentifier()
 
 	// Check if channel is in initial creation state

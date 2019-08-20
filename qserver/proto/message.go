@@ -17,7 +17,7 @@ type Message struct {
 	Payload    []*WireFrame
 	Exchange   string
 	RoutingKey string
-	Method     BasicPublish
+	Method     *BasicPublish
 }
 
 type QueueMessage struct {
@@ -27,11 +27,11 @@ type QueueMessage struct {
 }
 
 func NewMessage(m *BasicPublish) *Message {
-        return &Message{
-                ID:,
-                Method: m,
-                Exchange: m.Exchange,
-                RoutingKey: m.RoutingKey,
-                Payload:  make([]*WireFrame, 0, 1)
-        }
+	return &Message{
+		ID:         NextCnt(),
+		Method:     m,
+		Exchange:   m.Exchange,
+		RoutingKey: m.RoutingKey,
+		Payload:    make([]*WireFrame, 0, 1),
+	}
 }

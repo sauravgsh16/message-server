@@ -88,6 +88,324 @@ func ReadLongStr(buf io.Reader) (string, error) {
 	return fmt.Sprintf("%s", slice), nil
 }
 
-func ReadMethod(io.Reader) (m MethodFrame, err error) {
-	return
+func ReadMethod(r io.Reader) (MethodFrame, error) {
+	classID, err := ReadShort(r)
+	if err != nil {
+		return nil, err
+	}
+
+	methodID, err := ReadShort(r)
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case classID == 10:
+		switch {
+		case methodID == 10:
+			method := &ConnectionStart{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &ConnectionStartOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &ConnectionOpen{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &ConnectionOpenOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &ConnectionClose{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 31:
+			method := &ConnectionCloseOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
+
+	case classID == 20:
+		switch {
+		case methodID == 10:
+			method := &ChannelOpen{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &ChannelOpenOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &ChannelFlow{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &ChannelFlowOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &ChannelClose{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 31:
+			method := &ChannelCloseOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
+
+	case classID == 30:
+		switch {
+		case methodID == 10:
+			method := &ExchangeDeclare{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &ExchangeDeclareOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &ExchangeDelete{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &ExchangeDeleteOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &ExchangeBind{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 31:
+			method := &ExchangeBindOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 40:
+			method := &ExchangeUnbind{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 41:
+			method := &ExchangeUnbindOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
+
+	case classID == 40:
+		switch {
+		case methodID == 10:
+			method := &QueueDeclare{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &QueueDeclareOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &QueueBind{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &QueueBindOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &QueueUnbind{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 31:
+			method := &QueueUnbindOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 40:
+			method := &QueueDelete{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 41:
+			method := &QueueDeleteOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
+
+	case classID == 50:
+		switch {
+		case methodID == 10:
+			method := &BasicConsume{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &BasicConsumeOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &BasicCancel{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &BasicCancelOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &BasicPublish{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 40:
+			method := &BasicReturn{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 50:
+			method := &BasicDeliver{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 60:
+			method := &BasicAck{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 70:
+			method := &BasicNack{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Bad class or method id!. Class id: %d, Method id: %d", classID, methodID)
 }
