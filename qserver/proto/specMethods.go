@@ -1,8 +1,8 @@
 package proto
 
 import (
-        "errors"
-        "io"
+	"errors"
+	"io"
 )
 
 // *********************
@@ -12,184 +12,181 @@ import (
 // ** ConnectionStart **
 
 func (f *ConnectionStart) MethodIdentifier() (uint16, uint16) {
-        return 10, 10
+	return 10, 10
 }
 
 func (f *ConnectionStart) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionStart) MethodName() string {
-        return "ConnectionStart"
+	return "ConnectionStart"
 }
 
 func (f *ConnectionStart) Read(r io.Reader) (err error) {
 
-        f.Version, err = ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read version: " + err.Error())
-        }
+	f.Version, err = ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read version: " + err.Error())
+	}
 
-        f.Mechanism, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("counld not read mechanism: " + err.Error())
-        }
-        return nil
+	f.Mechanism, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("counld not read mechanism: " + err.Error())
+	}
+	return nil
 }
 
 // COMPLETE WRITERS
 func (f *ConnectionStart) Write(w io.Writer) (err error) {
-        return
+	return
 }
-
 
 // ** ConnectionStartOk **
 
 func (f *ConnectionStartOk) MethodIdentifier() (uint16, uint16) {
-        return 10, 11
+	return 10, 11
 }
 
 func (f *ConnectionStartOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionStartOk) MethodName() string {
-        return "ConnectionStartOk"
+	return "ConnectionStartOk"
 }
 
 func (f *ConnectionStartOk) Read(r io.Reader) (err error) {
-        f.Mechanism, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read mechanism - on ConnStartOk: " + err.Error())
-        }
+	f.Mechanism, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read mechanism - on ConnStartOk: " + err.Error())
+	}
 
-        f.Response, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read response string - on ConnStartOk: " + err.Error())
-        }
-        return nil
+	f.Response, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read response string - on ConnStartOk: " + err.Error())
+	}
+	return nil
 }
 
-func (f *ConnectionStartOk) Write(w io.Writer) (err error) {    // IMPLEMENT IT!!
-        return
+func (f *ConnectionStartOk) Write(w io.Writer) (err error) { // IMPLEMENT IT!!
+	return
 }
 
 // ** ConnectionOpen **
 
 func (f *ConnectionOpen) MethodIdentifier() (uint16, uint16) {
-        return 10, 20
+	return 10, 20
 }
 
 func (f *ConnectionOpen) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionOpen) MethodName() string {
-        return "ConnectionOpen"
+	return "ConnectionOpen"
 }
 
 func (f *ConnectionOpen) Read(r io.Reader) (err error) {
-        f.Host, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could to read Host: " + err.Error())
-        }
-        return nil
+	f.Host, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could to read Host: " + err.Error())
+	}
+	return nil
 }
 
-func (f *ConnectionOpen) Write(writer io.Writer) (err error) {    // IMPLEMENT IT!!
-        return
+func (f *ConnectionOpen) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
+	return
 }
 
 // ** ConnectionOpenOk **
 
 func (f *ConnectionOpenOk) MethodIdentifier() (uint16, uint16) {
-        return 10, 21
+	return 10, 21
 }
 
 func (f *ConnectionOpenOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionOpenOk) MethodName() string {
-        return "ConnectionOpenOk"
+	return "ConnectionOpenOk"
 }
 
 func (f *ConnectionOpenOk) Read(r io.Reader) (err error) {
-        f.Response, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could to read Host: " + err.Error())
-        }
-        return nil
+	f.Response, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could to read response in ConnectionOpenOk: " + err.Error())
+	}
+	return nil
 }
 
-func (f *ConnectionOpenOk) Write(writer io.Writer) (err error) {    // IMPLEMENT IT!!
-        return
+func (f *ConnectionOpenOk) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
+	return
 }
 
 // ** ConnectionClose **
 
 func (f *ConnectionClose) MethodIdentifier() (uint16, uint16) {
-        return 10, 30
+	return 10, 30
 }
 
 func (f *ConnectionClose) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionClose) MethodName() string {
-        return "ConnectionClose"
+	return "ConnectionClose"
 }
 
 func (f *ConnectionClose) Read(r io.Reader) (err error) {
-        f.ReplyCode, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read reply code: " + err.Error())
-        }
+	f.ReplyCode, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read reply code in ConnectionClose: " + err.Error())
+	}
 
-        f.ReplyText, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read reply text: " + err.Error())
-        }
+	f.ReplyText, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read reply text in ConnectionClose: " + err.Error())
+	}
 
-        f.ClassId, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read classId: " + err.Error())
-        }
+	f.ClassId, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read classId in ConnectionClose: " + err.Error())
+	}
 
-        f.MethodId, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read MethodId: " + err.Error())
-        }
-        return
+	f.MethodId, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read MethodId in ConnectionClose: " + err.Error())
+	}
+	return
 }
 
 func (f *ConnectionClose) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
-
 
 // ** ConnectionCloseOk **
 
 func (f *ConnectionCloseOk) MethodIdentifier() (uint16, uint16) {
-        return 10, 31
+	return 10, 31
 }
 
 func (f *ConnectionCloseOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ConnectionCloseOk) MethodName() string {
-        return "ConnectionCloseOk"
+	return "ConnectionCloseOk"
 }
 
 func (f *ConnectionCloseOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ConnectionCloseOk) Write(writer io.Writer) (err error) {
-        return
+	return
 }
-
 
 // *******************
 //    CHANNEL SPECS
@@ -198,172 +195,171 @@ func (f *ConnectionCloseOk) Write(writer io.Writer) (err error) {
 // ChannelOpen
 
 func (f *ChannelOpen) MethodIdentifier() (uint16, uint16) {
-        return 20, 10
+	return 20, 10
 }
 
 func (f *ChannelOpen) MethodName() string {
-        return "ChannelOpen"
+	return "ChannelOpen"
 }
 
 func (f *ChannelOpen) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelOpen) Read(r io.Reader) (err error) {
-        f.Reserved, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read reserved string from channel open: " + err.Error())
-        }
-        return
+	f.Reserved, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read reserved string in ChannelOpen: " + err.Error())
+	}
+	return
 }
 
 func (f *ChannelOpen) Write(w io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ChannelOpenOk
 
 func (f *ChannelOpenOk) MethodIdentifier() (uint16, uint16) {
-        return 20, 11
+	return 20, 11
 }
 
 func (f *ChannelOpenOk) MethodName() string {
-        return "ChannelOpenOk"
+	return "ChannelOpenOk"
 }
 
 func (f *ChannelOpenOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelOpenOk) Read(r io.Reader) (err error) {
-        f.Response, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read response of channel open ok: " + err.Error())
-        }
-        return
+	f.Response, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read response of channel open ok: " + err.Error())
+	}
+	return
 }
 
 func (f *ChannelOpenOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ChannelFlow
 
 func (f *ChannelFlow) MethodIdentifier() (uint16, uint16) {
-        return 20, 20
+	return 20, 20
 }
 
 func (f *ChannelFlow) MethodName() string {
-        return "ChannelFlow"
+	return "ChannelFlow"
 }
 
 func (f *ChannelFlow) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelFlow) Read(r io.Reader) (err error) {
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read response of channel open ok: " + err.Error())
-        }
-        f.Active = (bits&(1<<0) > 0)
-        return
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ChannelFlow: " + err.Error())
+	}
+	f.Active = (bits&(1<<0) > 0)
+	return
 }
 
 func (f *ChannelFlow) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ChannelFlowOk
 
 func (f *ChannelFlowOk) MethodIdentifier() (uint16, uint16) {
-        return 20, 21
+	return 20, 21
 }
 
 func (f *ChannelFlowOk) MethodName() string {
-        return "ChannelFlowOk"
+	return "ChannelFlowOk"
 }
 
 func (f *ChannelFlowOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelFlowOk) Read(r io.Reader) (err error) {
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read response of channel open ok: " + err.Error())
-        }
-        f.Active = (bits&(1<<0) > 0)
-        return
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ChannelFlowOk: " + err.Error())
+	}
+	f.Active = (bits&(1<<0) > 0)
+	return
 }
 
 func (f *ChannelFlowOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ChannelClose
 
 func (f *ChannelClose) MethodIdentifier() (uint16, uint16) {
-        return 20, 30
+	return 20, 30
 }
 
 func (f *ChannelClose) MethodName() string {
-        return "ChannelClose"
+	return "ChannelClose"
 }
 
 func (f *ChannelClose) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelClose) Read(r io.Reader) (err error) {
-        f.ReplyCode, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read reply code of channel close: " + err.Error())
-        }
+	f.ReplyCode, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read reply code of channel close: " + err.Error())
+	}
 
-        f.ReplyText, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read reply text of channel close: " + err.Error())
-        }
+	f.ReplyText, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read reply text of channel close: " + err.Error())
+	}
 
-        f.ClassId, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read class id of channel close: " + err.Error())
-        }
+	f.ClassId, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read class id of channel close: " + err.Error())
+	}
 
-        f.MethodId, err = ReadShort(r)
-        if err != nil {
-                return errors.New("could not read method id of channel close: " + err.Error())
-        }
-        return
+	f.MethodId, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read method id of channel close: " + err.Error())
+	}
+	return
 }
 
 func (f *ChannelClose) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ChannelCloseOk
 
 func (f *ChannelCloseOk) MethodIdentifier() (uint16, uint16) {
-        return 20, 31
+	return 20, 31
 }
 
 func (f *ChannelCloseOk) MethodName() string {
-        return "ChannelCloseOk"
+	return "ChannelCloseOk"
 }
 
 func (f *ChannelCloseOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ChannelCloseOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ChannelCloseOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
-
 
 // *******************
 //    EXCHANGE SPECS
@@ -372,252 +368,251 @@ func (f *ChannelCloseOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
 // ExchangeDeclare
 
 func (f *ExchangeDeclare) MethodIdentifier() (uint16, uint16) {
-        return 30, 10
+	return 30, 10
 }
 
 func (f *ExchangeDeclare) MethodName() string {
-        return "ExchangeDeclare"
+	return "ExchangeDeclare"
 }
 
 func (f *ExchangeDeclare) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeDeclare) Read(r io.Reader) (err error) {
-        f.Exchange, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read exchange name in declare: " + err.Error())
-        }
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange name in ExchangeDeclare: " + err.Error())
+	}
 
-        f.Type, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read exchange type in declare: " + err.Error())
-        }
+	f.Type, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange type in ExchangeDeclare: " + err.Error())
+	}
 
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in declare: " + err.Error())
-        }
-        f.NoWait = (bits&(1<<0) > 0)
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ExchangeDeclare: " + err.Error())
+	}
+	f.NoWait = (bits&(1<<0) > 0)
 
-        return
+	return
 }
 
 func (f *ExchangeDeclare) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeDeclareOk
 
 func (f *ExchangeDeclareOk) MethodIdentifier() (uint16, uint16) {
-        return 30, 11
+	return 30, 11
 }
 
 func (f *ExchangeDeclareOk) MethodName() string {
-        return "ExchangeDeclareOk"
+	return "ExchangeDeclareOk"
 }
 
 func (f *ExchangeDeclareOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeDeclareOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ExchangeDeclareOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeDelete
 
 func (f *ExchangeDelete) MethodIdentifier() (uint16, uint16) {
-        return 30, 20
+	return 30, 20
 }
 
 func (f *ExchangeDelete) MethodName() string {
-        return "ExchangeDelete"
+	return "ExchangeDelete"
 }
 
 func (f *ExchangeDelete) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeDelete) Read(r io.Reader) (err error) {
-        f.Exchange, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read exchange name in delete: " + err.Error())
-        }
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange name in ExchangeDelete: " + err.Error())
+	}
 
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in delete: " + err.Error())
-        }
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ExchangeDelete: " + err.Error())
+	}
 
-        f.IfUnused = (bits&(1<<0) > 0)
-        f.NoWait = (bits&(1<<1) > 0)
+	f.IfUnused = (bits&(1<<0) > 0)
+	f.NoWait = (bits&(1<<1) > 0)
 
-        return
+	return
 }
 
 func (f *ExchangeDelete) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeDeleteOk
 
 func (f *ExchangeDeleteOk) MethodIdentifier() (uint16, uint16) {
-        return 30, 21
+	return 30, 21
 }
 
 func (f *ExchangeDeleteOk) MethodName() string {
-        return "ExchangeDeleteOk"
+	return "ExchangeDeleteOk"
 }
 
 func (f *ExchangeDeleteOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeDeleteOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ExchangeDeleteOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeBind
 
 func (f *ExchangeBind) MethodIdentifier() (uint16, uint16) {
-        return 30, 30
+	return 30, 30
 }
 
 func (f *ExchangeBind) MethodName() string {
-        return "ExchangeBind"
+	return "ExchangeBind"
 }
 
 func (f *ExchangeBind) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeBind) Read(r io.Reader) (err error) {
-        f.Destination, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read Destination in bind: " + err.Error())
-        }
+	f.Destination, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read Destination in ExchangeBind: " + err.Error())
+	}
 
-        f.Source, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read Source in bind: " + err.Error())
-        }
+	f.Source, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read Source in ExchangeBind: " + err.Error())
+	}
 
-        f.RoutingKey , err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read RoutingKey in bind: " + err.Error())
-        }
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read RoutingKey in ExchangeBind: " + err.Error())
+	}
 
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in bind: " + err.Error())
-        }
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ExchangeBind: " + err.Error())
+	}
 
-        f.NoWait = (bits&(1<<0) > 0)
+	f.NoWait = (bits&(1<<0) > 0)
 
-        return
+	return
 }
 
 func (f *ExchangeBind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeBindOk
 
 func (f *ExchangeBindOk) MethodIdentifier() (uint16, uint16) {
-        return 30, 31
+	return 30, 31
 }
 
 func (f *ExchangeBindOk) MethodName() string {
-        return "ExchangeBindOk"
+	return "ExchangeBindOk"
 }
 
 func (f *ExchangeBindOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeBindOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ExchangeBindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeUnbind
 
 func (f *ExchangeUnbind) MethodIdentifier() (uint16, uint16) {
-        return 30, 40
+	return 30, 40
 }
 
 func (f *ExchangeUnbind) MethodName() string {
-        return "ExchangeUnbind"
+	return "ExchangeUnbind"
 }
 
 func (f *ExchangeUnbind) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeUnbind) Read(r io.Reader) (err error) {
-        f.Destination, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read Destination in bind: " + err.Error())
-        }
+	f.Destination, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read Destination in ExchangeUnbind: " + err.Error())
+	}
 
-        f.Source, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read Source in bind: " + err.Error())
-        }
+	f.Source, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read Source in ExchangeUnbind: " + err.Error())
+	}
 
-        f.RoutingKey , err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read RoutingKey in bind: " + err.Error())
-        }
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read RoutingKey in ExchangeUnbind: " + err.Error())
+	}
 
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in bind: " + err.Error())
-        }
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in ExchangeUnbind: " + err.Error())
+	}
 
-        f.NoWait = (bits&(1<<0) > 0)
+	f.NoWait = (bits&(1<<0) > 0)
 
-        return
+	return
 }
 
 func (f *ExchangeUnbind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // ExchangeUnbindOk
 
 func (f *ExchangeUnbindOk) MethodIdentifier() (uint16, uint16) {
-        return 30, 41
+	return 30, 41
 }
 
 func (f *ExchangeUnbindOk) MethodName() string {
-        return "ExchangeUnbindOk"
+	return "ExchangeUnbindOk"
 }
 
 func (f *ExchangeUnbindOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *ExchangeUnbindOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *ExchangeUnbindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
-
 
 // *******************
 //    QUEUE SPECS
@@ -634,262 +629,588 @@ func (f *ExchangeUnbindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
 // QueueDeclare
 
 func (f *QueueDeclare) MethodIdentifier() (uint16, uint16) {
-        return 40, 10
+	return 40, 10
 }
 
-
 func (f *QueueDeclare) MethodName() string {
-        return "QueueDeclare"
+	return "QueueDeclare"
 }
 
 func (f *QueueDeclare) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueDeclare) Read(r io.Reader) (err error) {
-        f.Queue, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue declare: " + err.Error())
-        }
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueDeclare: " + err.Error())
+	}
 
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in queue declare: " + err.Error())
-        }
-        f.NoWait = (bits&(1<<0) > 0)
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in QueueDeclare: " + err.Error())
+	}
+	f.NoWait = (bits&(1<<0) > 0)
 
-        return
+	return
 }
 
 func (f *QueueDeclare) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueDeclareOk
 
 func (f *QueueDeclareOk) MethodIdentifier() (uint16, uint16) {
-        return 40, 11
+	return 40, 11
 }
 
-
 func (f *QueueDeclareOk) MethodName() string {
-        return "QueueDeclareOk"
+	return "QueueDeclareOk"
 }
 
 func (f *QueueDeclareOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueDeclareOk) Read(r io.Reader) (err error) {
-        f.Queue, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue declareOk: " + err.Error())
-        }
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueDeclareOk: " + err.Error())
+	}
 
-        f.MessageCnt, err = ReadLong(r)
-        if err != nil {
-                return errors.New("could not read message count in queue declareOk: " + err.Error())
-        }
+	f.MessageCnt, err = ReadLong(r)
+	if err != nil {
+		return errors.New("could not read message count in queue declareOk: " + err.Error())
+	}
 
-        f.ConsumerCnt, err = ReadLong(r)
-        if err != nil {
-                return errors.New("could not read message count in queue declareOk: " + err.Error())
-        }
+	f.ConsumerCnt, err = ReadLong(r)
+	if err != nil {
+		return errors.New("could not read message count in queue declareOk: " + err.Error())
+	}
 
-        return
+	return
 }
 
 func (f *QueueDeclareOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueBind
 
 func (f *QueueBind) MethodIdentifier() (uint16, uint16) {
-        return 40, 20
+	return 40, 20
 }
 
-
 func (f *QueueBind) MethodName() string {
-        return "QueueBind"
+	return "QueueBind"
 }
 
 func (f *QueueBind) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueBind) Read(r io.Reader) (err error) {
-        f.Queue, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue bind: " + err.Error())
-        }
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueBind: " + err.Error())
+	}
 
-        f.Exchange, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read exchange in queue bind: " + err.Error())
-        }
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange in QueueBind: " + err.Error())
+	}
 
-        f.RoutingKey, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read routingkey in queue bind: " + err.Error())
-        }
-        
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in queue bind: " + err.Error())
-        }
-        f.NoWait = (bits&(1<<0) > 0)
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read routingkey in QueueBind: " + err.Error())
+	}
 
-        return
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in QueueBind: " + err.Error())
+	}
+	f.NoWait = (bits&(1<<0) > 0)
+
+	return
 }
 
 func (f *QueueBind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueBindOk
 
 func (f *QueueBindOk) MethodIdentifier() (uint16, uint16) {
-        return 40, 21
+	return 40, 21
 }
 
-
 func (f *QueueBindOk) MethodName() string {
-        return "QueueBindOk"
+	return "QueueBindOk"
 }
 
 func (f *QueueBindOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueBindOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *QueueBindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueUnbind
 
 func (f *QueueUnbind) MethodIdentifier() (uint16, uint16) {
-        return 40, 30
+	return 40, 30
 }
 
-
 func (f *QueueUnbind) MethodName() string {
-        return "QueueUnbind"
+	return "QueueUnbind"
 }
 
 func (f *QueueUnbind) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueUnbind) Read(r io.Reader) (err error) {
-        f.Queue, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue unbind: " + err.Error())
-        }
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueUnbind: " + err.Error())
+	}
 
-        f.Exchange, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read exchange in queue unbind: " + err.Error())
-        }
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange in QueueUnbind: " + err.Error())
+	}
 
-        f.RoutingKey, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read routingkey in queue unbind: " + err.Error())
-        }
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read routingkey in QueueUnbind: " + err.Error())
+	}
 
-        return
+	return
 }
 
 func (f *QueueUnbind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueUnbindOk
 
 func (f *QueueUnbindOk) MethodIdentifier() (uint16, uint16) {
-        return 40, 31
+	return 40, 31
 }
 
 func (f *QueueUnbindOk) MethodName() string {
-        return "QueueUnbindOk"
+	return "QueueUnbindOk"
 }
 
 func (f *QueueUnbindOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueUnbindOk) Read(r io.Reader) (err error) {
-        return
+	return
 }
 
 func (f *QueueUnbindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueDelete
 
 func (f *QueueDelete) MethodIdentifier() (uint16, uint16) {
-        return 40, 40
+	return 40, 40
 }
 
-
 func (f *QueueDelete) MethodName() string {
-        return "QueueDelete"
+	return "QueueDelete"
 }
 
 func (f *QueueDelete) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueDelete) Read(r io.Reader) (err error) {
-        f.Queue, err = ReadLongStr(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue delete: " + err.Error())
-        }
-        
-        bits, err := ReadOctet(r)
-        if err != nil {
-                return errors.New("could not read bits in queue delete: " + err.Error())
-        }
-        f.IfUnused = (bits&(1<<0) > 0)
-        f.IfEmpty = (bits&(1<<1) > 0)
-        f.NoWait = (bits&(1<<2) > 0)
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueDelete: " + err.Error())
+	}
 
-        return
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in QueueDelete: " + err.Error())
+	}
+	f.IfUnused = (bits&(1<<0) > 0)
+	f.IfEmpty = (bits&(1<<1) > 0)
+	f.NoWait = (bits&(1<<2) > 0)
+
+	return
 }
 
 func (f *QueueDelete) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
 }
 
 // QueueDeleteOk
 
 func (f *QueueDeleteOk) MethodIdentifier() (uint16, uint16) {
-        return 40, 40
+	return 40, 41
 }
 
-
 func (f *QueueDeleteOk) MethodName() string {
-        return "QueueDeleteOk"
+	return "QueueDeleteOk"
 }
 
 func (f *QueueDeleteOk) FrameType() byte {
-        return 1
+	return 1
 }
 
 func (f *QueueDeleteOk) Read(r io.Reader) (err error) {
-        f.MessageCnt, err = ReadLong(r)
-        if err != nil {
-                return errors.New("could not read queue name in queue deleteOk: " + err.Error())
-        }
+	f.MessageCnt, err = ReadLong(r)
+	if err != nil {
+		return errors.New("could not read queue name in QueueDeleteOk: " + err.Error())
+	}
 
-        return
+	return
 }
 
 func (f *QueueDeleteOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-        return
+	return
+}
+
+// *******************
+//    QoS SPECS
+//        basicConsume - 10
+//        basicConsumeOk - 11
+//        basicCancel - 20
+//        basicCancelOk - 21
+//        basicPublish - 30
+//        basicReturn  - 40
+//        basicDeliver - 50
+//        basicAck     - 60
+//        basicNack    - 70
+// *******************
+
+// BasicConsume
+
+func (f *BasicConsume) MethodIdentifier() (uint16, uint16) {
+	return 50, 10
+}
+
+func (f *BasicConsume) MethodName() string {
+	return "BasicConsume"
+}
+
+func (f *BasicConsume) FrameType() byte {
+	return 1
+}
+
+func (f *BasicConsume) Read(r io.Reader) (err error) {
+	f.Queue, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read queue name in basicConsume: " + err.Error())
+	}
+
+	f.ConsumerTag, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in basicConsume: " + err.Error())
+	}
+
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in basicConsume: " + err.Error())
+	}
+
+	f.NoAck = (bits&(1<<0) > 0)
+	f.NoWait = (bits&(1<<1) > 0)
+
+	return
+}
+
+func (f *BasicConsume) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicConsumeOk
+
+func (f *BasicConsumeOk) MethodIdentifier() (uint16, uint16) {
+	return 50, 11
+}
+
+func (f *BasicConsumeOk) MethodName() string {
+	return "BasicConsumeOk"
+}
+
+func (f *BasicConsumeOk) FrameType() byte {
+	return 1
+}
+
+func (f *BasicConsumeOk) Read(r io.Reader) (err error) {
+	f.ConsumerTag, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in basicConsumeOk: " + err.Error())
+	}
+
+	return
+}
+
+func (f *BasicConsumeOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicCancel
+
+func (f *BasicCancel) MethodIdentifier() (uint16, uint16) {
+	return 50, 20
+}
+
+func (f *BasicCancel) MethodName() string {
+	return "BasicCancel"
+}
+
+func (f *BasicCancel) FrameType() byte {
+	return 1
+}
+
+func (f *BasicCancel) Read(r io.Reader) (err error) {
+	f.ConsumerTag, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in BasicCancel: " + err.Error())
+	}
+
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in BasicCancel: " + err.Error())
+	}
+
+	f.NoWait = (bits&(1<<0) > 0)
+
+	return
+}
+
+func (f *BasicCancel) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicCancelOk
+
+func (f *BasicCancelOk) MethodIdentifier() (uint16, uint16) {
+	return 50, 21
+}
+
+func (f *BasicCancelOk) MethodName() string {
+	return "BasicCancelOk"
+}
+
+func (f *BasicCancelOk) FrameType() byte {
+	return 1
+}
+
+func (f *BasicCancelOk) Read(r io.Reader) (err error) {
+	f.ConsumerTag, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in BasicCancelOk: " + err.Error())
+	}
+
+	return
+}
+
+func (f *BasicCancelOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicPublish
+
+func (f *BasicPublish) MethodIdentifier() (uint16, uint16) {
+	return 50, 30
+}
+
+func (f *BasicPublish) MethodName() string {
+	return "BasicPublish"
+}
+
+func (f *BasicPublish) FrameType() byte {
+	return 1
+}
+
+func (f *BasicPublish) Read(r io.Reader) (err error) {
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicPublish: " + err.Error())
+	}
+
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in BasicPublish: " + err.Error())
+	}
+
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in BasicPublish: " + err.Error())
+	}
+
+	f.Immediate = (bits&(1<<0) > 0)
+
+	return
+}
+
+func (f *BasicPublish) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicReturn
+
+func (f *BasicReturn) MethodIdentifier() (uint16, uint16) {
+	return 50, 40
+}
+
+func (f *BasicReturn) MethodName() string {
+	return "BasicReturn"
+}
+
+func (f *BasicReturn) FrameType() byte {
+	return 1
+}
+
+func (f *BasicReturn) Read(r io.Reader) (err error) {
+	f.ReplyCode, err = ReadShort(r)
+	if err != nil {
+		return errors.New("could not read reply code in BasicReturn: " + err.Error())
+	}
+
+	f.ReplyText, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read reply test in BasicReturn: " + err.Error())
+	}
+
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicReturn: " + err.Error())
+	}
+
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in BasicReturn: " + err.Error())
+	}
+
+	return
+}
+
+func (f *BasicReturn) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicDeliver
+
+func (f *BasicDeliver) MethodIdentifier() (uint16, uint16) {
+	return 50, 50
+}
+
+func (f *BasicDeliver) MethodName() string {
+	return "BasicDeliver"
+}
+
+func (f *BasicDeliver) FrameType() byte {
+	return 1
+}
+
+func (f *BasicDeliver) Read(r io.Reader) (err error) {
+	f.ConsumerTag, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag name in BasicDeliver: " + err.Error())
+	}
+
+	f.DeliveryTag, err = ReadLongLong(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicDeliver: " + err.Error())
+	}
+
+	f.Exchange, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicDeliver: " + err.Error())
+	}
+
+	f.RoutingKey, err = ReadLongStr(r)
+	if err != nil {
+		return errors.New("could not read consumer tag in BasicDeliver: " + err.Error())
+	}
+
+	return
+}
+
+func (f *BasicDeliver) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicAck
+
+func (f *BasicAck) MethodIdentifier() (uint16, uint16) {
+	return 50, 60
+}
+
+func (f *BasicAck) MethodName() string {
+	return "BasicAck"
+}
+
+func (f *BasicAck) FrameType() byte {
+	return 1
+}
+
+func (f *BasicAck) Read(r io.Reader) (err error) {
+	f.DeliveryTag, err = ReadLongLong(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicAck: " + err.Error())
+	}
+
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in BasicAck: " + err.Error())
+	}
+
+	f.Multiple = (bits&(1<<0) > 0)
+
+	return
+}
+
+func (f *BasicAck) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// BasicNack
+
+func (f *BasicNack) MethodIdentifier() (uint16, uint16) {
+	return 50, 70
+}
+
+func (f *BasicNack) MethodName() string {
+	return "BasicNack"
+}
+
+func (f *BasicNack) FrameType() byte {
+	return 1
+}
+
+func (f *BasicNack) Read(r io.Reader) (err error) {
+
+	f.DeliveryTag, err = ReadLongLong(r)
+	if err != nil {
+		return errors.New("could not read exchange name in BasicNack: " + err.Error())
+	}
+
+	bits, err := ReadOctet(r)
+	if err != nil {
+		return errors.New("could not read bits in BasicAck: " + err.Error())
+	}
+
+	f.Multiple = (bits&(1<<0) > 0)
+	f.Requeue = (bits&(1<<1) > 0)
+	return
+}
+
+func (f *BasicNack) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
 }

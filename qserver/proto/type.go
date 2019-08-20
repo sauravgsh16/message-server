@@ -16,6 +16,8 @@ type MethodFrame interface {
         FrameType() byte
 }
 
+type MessageResourceHolder interface {}
+
 func (hf *HeaderFrame) FrameType() byte {
         return 2
 }

@@ -1,24 +1,37 @@
 package proto
 
 type WireFrame struct {
-        FrameType uint8
-        Channel   uint16
-        Payload   []byte
+	FrameType uint8
+	Channel   uint16
+	Payload   []byte
 }
 
 type HeaderFrame struct {
-        Class    uint16
-        BodySize uint64
+	Class    uint16
+	BodySize uint64
 }
 
 type Message struct {
-        Id       int64
-        Header   *HeaderFrame
-        Payload  []*WireFrame
-        Exchange string
-        Method   BasicPublish
+	ID         int64
+	Header     *HeaderFrame
+	Payload    []*WireFrame
+	Exchange   string
+	RoutingKey string
+	Method     BasicPublish
 }
 
-type BasicPublish struct {
+type QueueMessage struct {
+	ID            int64
+	DeliveryCount int32
+	msgSize       int32
+}
 
+func NewMessage(m *BasicPublish) *Message {
+        return &Message{
+                ID:,
+                Method: m,
+                Exchange: m.Exchange,
+                RoutingKey: m.RoutingKey,
+                Payload:  make([]*WireFrame, 0, 1)
+        }
 }

@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/sauravgsh16/secoc-third/qserver/consumer"
+	"github.com/sauravgsh16/secoc-third/qserver/proto"
 	sh "github.com/sauravgsh16/secoc-third/shared"
 )
 
@@ -14,10 +15,11 @@ type qData struct {
 }
 
 type Queue struct {
-        Name         string
+	Name         string
 	list         *List
+	Closed       bool
 	mux          sync.Mutex
-        In           chan sh.Message
+	In           chan sh.Message
 	Out          chan sh.Message
 	consumers    []*consumer.Consumer
 	ConnId       int64
@@ -28,9 +30,9 @@ type Queue struct {
 
 func NewQueue(name string, connId int64, deleteChan chan *Queue) *Queue {
 	q := &Queue{
-                Name: name,
-                In:   make(chan sh.Message),
-		Out:  make(chan sh.Message),
+		Name:       name,
+		In:         make(chan sh.Message),
+		Out:        make(chan sh.Message),
 		consumers:  make([]*consumer.Consumer, 0),
 		deleteChan: deleteChan,
 	}
@@ -45,12 +47,12 @@ func (q *Queue) ConsumerCount() uint32 {
 func (q *Queue) datapump() {
 channel:
 	for {
-                // new queue
-                if q.list == nil {
-                        q.list = newList()
-                }
+		// new queue
+		if q.list == nil {
+			q.list = newList()
+		}
 		select {
-		case msg, ok := <- q.In:
+		case msg, ok := <-q.In:
 			if !ok {
 				break channel // Input channel closed, we break out of loop
 			}
@@ -86,4 +88,24 @@ func (q *Queue) deQueue() sh.Message {
 
 func (q *Queue) Len() int {
 	return q.list.Len()
+}
+
+// ************************
+//       IMPLEMENT
+//
+
+func (q *Queue) Close() {
+
+}
+
+func (q *Queue) Delete(ifUnused bool, ifEmpty bool) (uint32, error) {
+	return 0, nil
+}
+
+func (q *Queue) GetOne(mrh ...proto.MessageResourceHolder) (*proto.QueueMessage, *proto.Message) {
+	return nil, nil
+}
+
+func (q *Queue) AddConsumer(c *consumer.Consumer) (uint16, error) {
+	return 0, nil
 }

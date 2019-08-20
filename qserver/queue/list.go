@@ -64,7 +64,7 @@ func (l *List) Append(d qData) {
 func (l *List) Remove() qData {
 	d, err := l.remove()
 	if err != nil {
-		return qData{data: sh.Message{Body: make([]byte, 0)},}
+		return qData{data: sh.Message{Body: make([]byte, 0)}}
 	}
 	return d
 }

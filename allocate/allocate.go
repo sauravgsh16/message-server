@@ -2,6 +2,7 @@ package allocate
 
 import (
         "math/big"
+        "math/rand"
 )
 const (
         min       = 1
@@ -46,4 +47,15 @@ func (a *Allocator) reserve(n int) bool {
 
 func (a *Allocator) reserved(n int) bool {
         return a.pool.Bit(n-a.low) == allocated
+}
+
+var char = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+
+func RandomID() string {
+        size := 32
+        id := make([]rune, size)
+        for i := range id {
+                id[i] = char[rand.Intn(size)]
+        }
+        return string(id)
 }
