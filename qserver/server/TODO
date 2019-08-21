@@ -11,7 +11,18 @@ specMethods.go
 
 server.go
     1) conn.server.deleteQueuesForConn
-    2) publish
+    2) publish - doing
     3) add msgStore to all required methods
     4) Check if two DB - server and message are required.
 
+exchange.go
+    1) Close
+
+queue.go
+    1) Add
+
+store.go
+    1) AddMessage
+    2) RemoveRef
+
+Check for RETURN CODES ALL OVER REPO, IMPLEMENT CONSTANTS

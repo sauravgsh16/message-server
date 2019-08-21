@@ -92,11 +92,41 @@ func (ex *Exchange) RemoveQueueBindings(qname string) {
 	defer ex.bindLock.Unlock()
 
 	for _, b := range ex.bindings {
-		if b.Queue != qname {
+		if b.QueueName != qname {
 			bindings = append(bindings, b)
 		}
 	}
 	ex.bindings = bindings
+}
+
+func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.ProtoError) {
+	clsID, mtdID := msg.Method.MethodIdentifier()
+	queues := make([]string, 0)
+	if ex.Name != msg.Method.Exchange {
+		return queues, proto.NewSoftError(404, "Exchange name MisMatch", clsID, mtdID)
+	}
+
+	switch {
+	case ex.ExType == EX_DIRECT:
+		for _, b := range ex.bindings {
+			if b.CheckDirectMatches(msg.Method) {
+				queues = append(queues, b.QueueName)
+				return queues, nil
+			}
+		}
+	case ex.ExType == EX_FANOUT:
+		for _, b := range ex.bindings {
+			if b.CheckDirectMatches(msg.Method) {
+				queues = append(queues, b.QueueName)
+			}
+		}
+	// TODO:
+	// case ex.ExType == EX_HEADERS
+	default:
+		panic("Exchange type unknown")
+	}
+
+	return queues, nil
 }
 
 func (ex *Exchange) Close() {} // IMPLEMENT

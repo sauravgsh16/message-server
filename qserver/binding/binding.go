@@ -10,10 +10,10 @@ import (
 
 // Binding struct
 type Binding struct {
-	ID       string
-	Queue    string
-	Exchange string
-	Key      string
+	ID        string
+	QueueName string
+	Exchange  string
+	Key       string
 }
 
 // NewBinding returns a binding struct of queue, exchange and routing key
@@ -24,10 +24,10 @@ func NewBinding(queue, exchange, key string) (*Binding, error) {
 	}
 	idStr := fmt.Sprintf("%s", id)
 	return &Binding{
-		Queue:    queue,
-		Exchange: exchange,
-		Key:      key,
-		ID:       idStr,
+		QueueName: queue,
+		Exchange:  exchange,
+		Key:       key,
+		ID:        idStr,
 	}, nil
 }
 
@@ -36,7 +36,7 @@ func (b *Binding) Equals(b2 *Binding) bool {
 	if b.ID != b2.ID {
 		return false
 	}
-	if b.Queue != b2.Queue {
+	if b.QueueName != b2.QueueName {
 		return false
 	}
 	if b.Exchange != b2.Exchange {
@@ -46,6 +46,14 @@ func (b *Binding) Equals(b2 *Binding) bool {
 		return false
 	}
 	return true
+}
+
+func (b *Binding) CheckDirectMatches(m *proto.BasicPublish) bool {
+	return b.Exchange == m.Exchange && b.Key == m.RoutingKey
+}
+
+func (b *Binding) CheckFanoutMatches(m *proto.BasicPublish) bool {
+	return b.Exchange == m.Exchange
 }
 
 func calculateID(queue, exchange, key string) ([]byte, error) {

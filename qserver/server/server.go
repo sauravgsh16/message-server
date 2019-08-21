@@ -161,3 +161,51 @@ func (s *Server) deleteQueuesForConn(connID int64) {
 		s.deleteQueue(qd, connID)
 	}
 }
+
+func (s *Server) basicReturnMsg(msg *proto.Message, code uint16, text string) *proto.BasicReturn {
+	return &proto.BasicReturn{
+		ReplyCode:  code,
+		ReplyText:  text,
+		Exchange:   msg.Method.Exchange,
+		RoutingKey: msg.Method.RoutingKey,
+	}
+}
+
+func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.BasicReturn, *proto.ProtoError) {
+	if ex.Closed {
+		return s.basicReturnMsg(msg, 313, "Exchange closed, unable to route message"), nil // AGAIN CHECK FOR RETURN CODE - IMPLEMENT CONSTANT
+	}
+
+	queues, err := ex.QueuesToPublish(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	// No avaliable queues
+	if len(queues) == 0 {
+		return s.basicReturnMsg(msg, 313, "No available queues found"), nil
+	}
+
+	// TODO:
+	// CHECK IF IMMEDIATE CONSUMPTION OF QUEUE IS REQUIRED
+
+	// Add message and queue to message store.
+	mapQueueWithQueueMessages, errObj := s.msgStore.AddMessage(msg, queues)
+	if errObj != nil {
+		clsID, mtdID := msg.Method.MethodIdentifier()
+		return nil, proto.NewSoftError(500, errObj.Error(), clsID, mtdID)
+	}
+
+	for _, queueName := range queues {
+		qMsgs := mapQueueWithQueueMessages[queueName]
+		for _, qm := range qMsgs {
+			q, found := s.queues[queueName]
+			if !found || !q.Add(qm) {
+				// Need to remove queue reference from msg store
+				// particular queue message
+				s.msgStore.RemoveRef(qm, queueName)
+			}
+		}
+	}
+	return nil, nil
+}

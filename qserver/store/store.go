@@ -37,3 +37,8 @@ func New(db *bolt.DB) (*MsgStore, error) {
 func (s *MsgStore) Persist() {
 
 }
+
+func (s *MsgStore) AddMessage(msg *proto.Message, qs []string) (map[string][]*proto.QueueMessage, error) {
+}
+
+func (s *MsgStore) RemoveRef(qm *proto.QueueMessage, queue string) {}

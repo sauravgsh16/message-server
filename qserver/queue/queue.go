@@ -50,8 +50,8 @@ func (q *Queue) Close() {
 	q.Closed = true
 }
 
-func (q *Queue) Add(qm *proto.QueueMessage) {
-
+func (q *Queue) Add(qm *proto.QueueMessage) bool {
+	return true
 }
 
 func (q *Queue) Delete(ifUnused bool, ifEmpty bool) (uint32, error) {
