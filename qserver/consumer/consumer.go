@@ -4,9 +4,11 @@ import (
 	"sync"
 
 	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/qserver/store"
 )
 
 type Consumer struct {
+	msgStore    *store.MsgStore
 	ConsumerTag string
 	cResource   ConsumerResource
 	incoming    chan bool
@@ -29,8 +31,9 @@ type ConsumerResource interface {
 	GetDeliveryTag() uint64
 }
 
-func NewConsumer(cr ConsumerResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool) *Consumer {
+func NewConsumer(ms *store.MsgStore, cr ConsumerResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool) *Consumer {
 	return &Consumer{
+		msgStore:    ms,
 		ConsumerTag: consumerTag,
 		cResource:   cr,
 		incoming:    make(chan bool),

@@ -5,9 +5,12 @@ import (
 	"net"
 	"sync"
 
+	"github.com/boltdb/bolt"
+
 	"github.com/sauravgsh16/secoc-third/qserver/exchange"
 	"github.com/sauravgsh16/secoc-third/qserver/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
+	"github.com/sauravgsh16/secoc-third/qserver/store"
 )
 
 type Server struct {
@@ -15,19 +18,64 @@ type Server struct {
 	queues          map[string]*queue.Queue
 	conns           map[int64]*Connection
 	mux             sync.Mutex
+	db              *bolt.DB
+	msgStore        *store.MsgStore
 	exchangeDeleter chan *exchange.Exchange
 	queueDeleter    chan *queue.Queue
 }
 
-func NewServer() *Server {
-	var server = &Server{
+// INCASE - THE SERVER AND THE MESSAGE DB NEEDS TO BE SEPARATE - THIS IS THE POINT
+// WHERE WE ACCEPT TO DIFFERENT DB PATHS.
+func NewServer(dbFilePath string) *Server {
+	db, err := bolt.Open(dbFilePath, 0666, nil)
+	if err != nil {
+		panic(err.Error())
+	}
+	msgStore, err := store.New(db)
+	if err != nil {
+		panic("unable to create message store")
+	}
+	var s = &Server{
 		exchanges:       make(map[string]*exchange.Exchange),
 		queues:          make(map[string]*queue.Queue),
 		conns:           make(map[int64]*Connection),
 		exchangeDeleter: make(chan *exchange.Exchange),
 		queueDeleter:    make(chan *queue.Queue),
+		db:              db,
+		msgStore:        msgStore,
 	}
-	return server
+
+	go s.deleteExchangeMonitor()
+	go s.deleteQueueMonitor()
+	return s
+}
+
+func (s *Server) OpenConnection(conn net.Conn) {
+	c := NewConnection(s, conn)
+	s.conns[c.id] = c
+	c.openConnection()
+}
+
+// ****** PRIVATE METHODS *********
+
+func (s *Server) deleteExchangeMonitor() {
+	for e := range s.exchangeDeleter {
+		exDel := &proto.ExchangeDelete{
+			Exchange: e.Name,
+			NoWait:   true,
+		}
+		s.deleteExchange(exDel)
+	}
+}
+
+func (s *Server) deleteQueueMonitor() {
+	for q := range s.queueDeleter {
+		qDel := &proto.QueueDelete{
+			Queue:  q.Name,
+			NoWait: true,
+		}
+		s.deleteQueue(qDel, -1)
+	}
 }
 
 func (s *Server) addExchange(ex *exchange.Exchange) error {
@@ -96,8 +144,20 @@ func (s *Server) deleteConnection(connID int64) {
 	delete(s.conns, connID)
 }
 
-func (s *Server) OpenConnection(conn net.Conn) {
-	c := NewConnection(s, conn)
-	s.conns[c.id] = c
-	c.openConnection()
+func (s *Server) deleteQueuesForConn(connID int64) {
+	s.mux.Lock()
+	qToDelete := make([]*queue.Queue, 0)
+	for _, q := range s.queues {
+		if q.ConnId == connID {
+			qToDelete = append(qToDelete, q)
+		}
+	}
+	s.mux.Unlock()
+
+	for _, q := range qToDelete {
+		qd := &proto.QueueDelete{
+			Queue: q.Name,
+		}
+		s.deleteQueue(qd, connID)
+	}
 }

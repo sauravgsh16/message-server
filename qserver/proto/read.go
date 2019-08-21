@@ -405,6 +405,56 @@ func ReadMethod(r io.Reader) (MethodFrame, error) {
 			}
 			return method, nil
 		}
+
+	case classID == 60:
+		switch {
+		case methodID == 10:
+			method := &TxSelect{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 11:
+			method := &TxSelectOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		case methodID == 20:
+			method := &TxCommit{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 21:
+			method := &TxCommitOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 30:
+			method := &TxRollback{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+
+		case methodID == 31:
+			method := &TxRollbackOk{}
+			err = method.Read(r)
+			if err != nil {
+				return nil, err
+			}
+			return method, nil
+		}
 	}
 
 	return nil, fmt.Errorf("Bad class or method id!. Class id: %d, Method id: %d", classID, methodID)

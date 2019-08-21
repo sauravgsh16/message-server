@@ -67,7 +67,7 @@ func (conn *Connection) hardClose() {
 	conn.network.Close()
 	conn.status.closed = true
 	conn.server.deleteConnection(conn.id)
-	conn.server.deleteRegisteredQueues(conn.id)
+	conn.server.deleteQueuesForConn(conn.id)
 	for _, ch := range conn.channels {
 		ch.shutdown()
 	}

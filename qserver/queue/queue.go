@@ -1,93 +1,43 @@
 package queue
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/sauravgsh16/secoc-third/qserver/consumer"
 	"github.com/sauravgsh16/secoc-third/qserver/proto"
-	sh "github.com/sauravgsh16/secoc-third/shared"
 )
 
-// qData : need to check if more implementation details required
-// Check Table : - types.go amqp
-type qData struct {
-	data sh.Message
-}
-
 type Queue struct {
-	Name         string
-	list         *List
-	Closed       bool
-	mux          sync.Mutex
-	In           chan sh.Message
-	Out          chan sh.Message
-	consumers    []*consumer.Consumer
-	ConnId       int64
-	deleteChan   chan *Queue
-	qLock        sync.Mutex
-	consumerLock sync.RWMutex
+	Name        string
+	list        *List
+	Closed      bool
+	qmux        sync.Mutex
+	consumers   []*consumer.Consumer
+	consumerMux sync.RWMutex
+	ConnId      int64
+	deleteChan  chan *Queue
 }
 
 func NewQueue(name string, connId int64, deleteChan chan *Queue) *Queue {
-	q := &Queue{
+	return &Queue{
 		Name:       name,
-		In:         make(chan sh.Message),
-		Out:        make(chan sh.Message),
+		list:       newlist(),
 		consumers:  make([]*consumer.Consumer, 0),
 		deleteChan: deleteChan,
 	}
-	go q.datapump()
-	return q
+}
+
+func (q *Queue) Len() uint32 {
+	l := q.list.Len()
+	if l < 0 {
+		panic("Queue overflow")
+	}
+	return uint32(l)
 }
 
 func (q *Queue) ConsumerCount() uint32 {
 	return uint32(len(q.consumers))
-}
-
-func (q *Queue) datapump() {
-channel:
-	for {
-		// new queue
-		if q.list == nil {
-			q.list = newList()
-		}
-		select {
-		case msg, ok := <-q.In:
-			if !ok {
-				break channel // Input channel closed, we break out of loop
-			}
-			q.enQueue(msg)
-		// When reading from Out channel, need to keep in mind
-		// when no data is present, we are returning an empty Message struct
-		case q.Out <- q.deQueue():
-		}
-	}
-	// We drain the output channel
-	for q.Len() > 0 {
-		q.Out <- q.deQueue()
-	}
-	close(q.Out)
-}
-
-// TODO: NEED TO IMPLEMENT MUTEX FOR WRITING TO AND READING FROM QUEUE
-// EnQueue
-func (q *Queue) enQueue(msg sh.Message) {
-	qd := qData{data: msg}
-	q.mux.Lock()
-	q.list.Append(qd)
-	q.mux.Unlock()
-}
-
-// DeQueue from queue
-func (q *Queue) deQueue() sh.Message {
-	q.mux.Lock()
-	qd := q.list.Remove()
-	q.mux.Unlock()
-	return qd.data
-}
-
-func (q *Queue) Len() int {
-	return q.list.Len()
 }
 
 // ************************
@@ -95,11 +45,57 @@ func (q *Queue) Len() int {
 //
 
 func (q *Queue) Close() {
+	q.qmux.Lock()
+	defer q.qmux.Unlock()
+	q.Closed = true
+}
+
+func (q *Queue) Add(qm *proto.QueueMessage) {
 
 }
 
 func (q *Queue) Delete(ifUnused bool, ifEmpty bool) (uint32, error) {
-	return 0, nil
+	if !q.Closed {
+		panic("Tryin to delete unclosed Queue")
+	}
+	q.qmux.Lock()
+	defer q.qmux.Unlock()
+
+	// Check if queue is being used
+	used := !ifUnused || len(q.consumers) == 0
+	emptied := !ifEmpty || q.list.Len() == 0
+
+	if !used {
+		return 0, errors.New("consumers present - specified unused")
+	}
+	if !emptied {
+		return 0, errors.New("messages in Queue - specified is empty")
+	}
+
+	// Send cancel to all consumers of queue
+	q.sendCancelConsumers()
+	// Purge queue data
+	return q.purgeQueueData(), nil
+}
+
+func (q *Queue) sendCancelConsumers() {
+	q.consumerMux.Lock()
+	defer q.consumerMux.Unlock()
+
+	for _, c := range q.consumers {
+		// ************* TODO *******************
+		// Commenting below line
+		// c.SendCancel()
+		// **************************************
+		c.Stop()
+	}
+	q.consumers = make([]*consumer.Consumer, 0, 1)
+}
+
+func (q *Queue) purgeQueueData() uint32 {
+	length := q.list.Len()
+	q.list.removeRef()
+	return uint32(length)
 }
 
 func (q *Queue) GetOne(mrh ...proto.MessageResourceHolder) (*proto.QueueMessage, *proto.Message) {

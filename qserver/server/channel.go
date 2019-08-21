@@ -32,6 +32,7 @@ type Channel struct {
 	usedQueueName  string
 	deliveryTag    uint64
 	tagMux         sync.Mutex
+	txMode         bool
 }
 
 func NewChannel(id uint16, conn *Connection) *Channel {
@@ -90,13 +91,39 @@ func (ch *Channel) SendMethod(m proto.MethodFrame) {
 }
 
 // **************IMPLEMENT BELOW ************************
+// ********************************************************
 
 func (ch *Channel) SendContent(mf proto.MethodFrame, msg *proto.Message) {}
 
 //  *****************************************************
+// *******************************************************
 
 func (ch *Channel) FlowActive() bool {
 	return ch.flow
+}
+
+func (ch *Channel) GetDeliveryTag() uint64 {
+	ch.tagMux.Lock()
+	defer ch.tagMux.Unlock()
+
+	ch.deliveryTag++
+	return ch.deliveryTag
+}
+
+// ************************* PRIVATE METHODS ***********************************
+
+func (ch *Channel) startTxMode() {
+	ch.txMode = true
+}
+
+func (ch *Channel) commitTx() *proto.ProtoError {
+
+	return nil
+}
+
+func (ch *Channel) rollbackTx() *proto.ProtoError {
+
+	return nil
 }
 
 func (ch *Channel) sendError(err *proto.ProtoError) {
@@ -128,18 +155,10 @@ func (ch *Channel) activateFlow(active bool) {
 	}
 }
 
-func (ch *Channel) GetDeliveryTag() uint64 {
-	ch.tagMux.Lock()
-	defer ch.tagMux.Unlock()
-
-	ch.deliveryTag++
-	return ch.deliveryTag
-}
-
 func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.ProtoError {
 	clsID, mtdID := m.MethodIdentifier()
 
-	c := consumer.NewConsumer(ch, m.ConsumerTag, q, q.Name, m.NoAck)
+	c := consumer.NewConsumer(ch.server.msgStore, ch, m.ConsumerTag, q, q.Name, m.NoAck)
 	ch.consumerMux.Lock()
 	defer ch.consumerMux.Unlock()
 
@@ -201,27 +220,29 @@ func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
 		return proto.NewHardError(500, err.Error(), 0, 0)
 	}
 
-	var classId, methodId = methodFrame.MethodIdentifier()
+	var classID, methodID = methodFrame.MethodIdentifier()
 
 	// Check if channel is in initial creation state
-	if ch.state == CH_INIT && (classId != 20 || methodId != 10) {
-		return proto.NewHardError(503, "Open method call on non-open channel", classId, methodId)
+	if ch.state == CH_INIT && (classID != 20 || methodID != 10) {
+		return proto.NewHardError(503, "Open method call on non-open channel", classID, methodID)
 	}
 
-	// Route methodFrame based on classId
+	// Route methodFrame based on classID
 	switch {
-	case classId == 10:
+	case classID == 10:
 		return ch.connectionRoute(ch.conn, methodFrame)
-	case classId == 20:
+	case classID == 20:
 		return ch.channelRoute(methodFrame)
-	case classId == 30:
+	case classID == 30:
 		return ch.exchangeRoute(methodFrame)
-	case classId == 50:
+	case classID == 40:
 		return ch.queueRoute(methodFrame)
-	case classId == 60:
+	case classID == 50:
 		return ch.basicRoute(methodFrame)
+	case classID == 60:
+		return ch.txRoute(methodFrame)
 	default:
-		return proto.NewHardError(540, "Not Implemented", classId, methodId)
+		return proto.NewHardError(540, "Not Implemented", classID, methodID)
 	}
 }
 

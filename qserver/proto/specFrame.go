@@ -198,3 +198,19 @@ type BasicNack struct {
 	Multiple    bool
 	Requeue     bool
 }
+
+// ***********************
+//    	TX FRAMES
+// ***********************
+
+type TxSelect struct{}
+
+type TxSelectOk struct{}
+
+type TxCommit struct{}
+
+type TxCommitOk struct{}
+
+type TxRollback struct{}
+
+type TxRollbackOk struct{}

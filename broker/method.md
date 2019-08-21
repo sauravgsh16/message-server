@@ -38,15 +38,15 @@ queue - class 40
         QueueDeleteOk  - 41
 Qos - class 50
     method:
-        basicConsume - 10
-        basicConsumeOk - 11
-        basicCancel - 20
-        basicCancelOk - 21
-        basicPublish - 30
-        basicReturn  - 40
-        basicDeliver - 50
-        basicAck     - 60
-        basicNack    - 70
+        BasicConsume - 10
+        BasicConsumeOk - 11
+        BasicCancel - 20
+        BasicCancelOk - 21
+        BasicPublish - 30
+        BasicReturn  - 40
+        BasicDeliver - 50
+        BasicAck     - 60
+        BasicNack    - 70
 
 ***************************************
 

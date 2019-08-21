@@ -1214,3 +1214,146 @@ func (f *BasicNack) Read(r io.Reader) (err error) {
 func (f *BasicNack) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
 	return
 }
+
+// *******************
+//   Tx SPECS
+//   Class - 60
+//	 TxSelect - 10
+//	 TxSelectOk - 11
+//	 TxCommit - 20
+//	 TxCommitOk - 21
+//	 TxRollback - 30
+//	 TxRollbackOk - 31
+// *******************
+
+// TxSelect
+
+func (f *TxSelect) MethodIdentifier() (uint16, uint16) {
+	return 60, 10
+}
+
+func (f *TxSelect) MethodName() string {
+	return "TxSelect"
+}
+
+func (f *TxSelect) FrameType() byte {
+	return 1
+}
+
+func (f *TxSelect) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxSelect) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// TxSelectOk
+
+func (f *TxSelectOk) MethodIdentifier() (uint16, uint16) {
+	return 60, 11
+}
+
+func (f *TxSelectOk) MethodName() string {
+	return "TxSelectOk"
+}
+
+func (f *TxSelectOk) FrameType() byte {
+	return 1
+}
+
+func (f *TxSelectOk) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxSelectOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// TxCommit
+
+func (f *TxCommit) MethodIdentifier() (uint16, uint16) {
+	return 60, 20
+}
+
+func (f *TxCommit) MethodName() string {
+	return "TxCommit"
+}
+
+func (f *TxCommit) FrameType() byte {
+	return 1
+}
+
+func (f *TxCommit) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxCommit) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// TxCommitOk
+
+func (f *TxCommitOk) MethodIdentifier() (uint16, uint16) {
+	return 60, 21
+}
+
+func (f *TxCommitOk) MethodName() string {
+	return "TxCommitOk"
+}
+
+func (f *TxCommitOk) FrameType() byte {
+	return 1
+}
+
+func (f *TxCommitOk) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxCommitOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// TxRollback
+
+func (f *TxRollback) MethodIdentifier() (uint16, uint16) {
+	return 60, 30
+}
+
+func (f *TxRollback) MethodName() string {
+	return "TxRollback"
+}
+
+func (f *TxRollback) FrameType() byte {
+	return 1
+}
+
+func (f *TxRollback) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxRollback) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}
+
+// TxRollbackOk
+
+func (f *TxRollbackOk) MethodIdentifier() (uint16, uint16) {
+	return 60, 31
+}
+
+func (f *TxRollbackOk) MethodName() string {
+	return "TxRollbackOk"
+}
+
+func (f *TxRollbackOk) FrameType() byte {
+	return 1
+}
+
+func (f *TxRollbackOk) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *TxRollbackOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+	return
+}

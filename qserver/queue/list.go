@@ -3,9 +3,9 @@ package queue
 import (
 	"errors"
 	"fmt"
-
-	sh "github.com/sauravgsh16/secoc-third/shared"
 )
+
+type qData interface{}
 
 type msg struct {
 	next  *msg
@@ -24,7 +24,13 @@ func (l *List) Len() int {
 }
 
 // NewList points to pointer to a new list
-func newList() *List { return &List{} }
+func newlist() *List { return &List{} }
+
+func (l *List) removeRef() *List {
+	l.Root = &msg{}
+	l.len = 0
+	return l
+}
 
 func (l *List) findLast() *msg {
 	cur := l.Root
@@ -46,7 +52,7 @@ func (l *List) append(d qData) {
 
 func (l *List) remove() (qData, error) {
 	if l.Root == nil {
-		return qData{}, errors.New("Cannot remove from empty list")
+		return nil, errors.New("Cannot remove from empty list")
 	}
 	n := *l.Root
 	l.Root = n.next
@@ -64,7 +70,8 @@ func (l *List) Append(d qData) {
 func (l *List) Remove() qData {
 	d, err := l.remove()
 	if err != nil {
-		return qData{data: sh.Message{Body: make([]byte, 0)}}
+		// return qData{data: sh.Message{Body: make([]byte, 0)}}
+		return nil
 	}
 	return d
 }

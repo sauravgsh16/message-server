@@ -1,0 +1,17 @@
+
+channel.go
+    ch.SendContent
+    ch.commitTx
+    ch.rollbackTx
+
+
+specMethods.go
+    all write methods - proto
+
+
+server.go
+    1) conn.server.deleteQueuesForConn
+    2) publish
+    3) add msgStore to all required methods
+    4) Check if two DB - server and message are required.
+
