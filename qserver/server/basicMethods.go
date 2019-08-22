@@ -72,7 +72,7 @@ func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.ProtoError {
 		return proto.NewSoftError(404, "Exchange not found", clsID, mtdID)
 	}
 
-	ch.publish(m)
+	ch.startPublish(m)
 	return nil
 }
 

@@ -21,7 +21,7 @@ func (ch *Channel) connectionRoute(conn *Connection, mf proto.MethodFrame) *prot
 
 func (ch *Channel) connectionOpen(c *Connection, m *proto.ConnectionOpen) *proto.ProtoError {
 	c.status.open = true
-	ch.SendMethod(&proto.ConnectionOpenOk{""})
+	ch.SendMethod(&proto.ConnectionOpenOk{Response: ""})
 	c.status.openOk = true
 	return nil
 }

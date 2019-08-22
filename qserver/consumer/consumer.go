@@ -10,7 +10,7 @@ import (
 type Consumer struct {
 	msgStore    *store.MsgStore
 	ConsumerTag string
-	cResource   ConsumerResource
+	chResource  ChannelResource
 	incoming    chan bool
 	cQueue      ConsumerQueue
 	queueName   string
@@ -18,24 +18,28 @@ type Consumer struct {
 	stopped     bool
 	stopMux     sync.Mutex
 	noAck       bool
+	defaultSize uint32
+	activeSize  uint32
+	sizeMux     sync.Mutex
 }
 
 type ConsumerQueue interface {
 	GetOne(mrh ...proto.MessageResourceHolder) (*proto.QueueMessage, *proto.Message)
 }
 
-type ConsumerResource interface {
+type ChannelResource interface {
+	proto.MessageResourceHolder
 	SendContent(mf proto.MethodFrame, msg *proto.Message)
 	SendMethod(mf proto.MethodFrame)
 	FlowActive() bool
 	GetDeliveryTag() uint64
 }
 
-func NewConsumer(ms *store.MsgStore, cr ConsumerResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool) *Consumer {
+func NewConsumer(ms *store.MsgStore, cr ChannelResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool, defaultSize uint32) *Consumer {
 	return &Consumer{
 		msgStore:    ms,
 		ConsumerTag: consumerTag,
-		cResource:   cr,
+		chResource:  cr,
 		incoming:    make(chan bool),
 		cQueue:      cq,
 		queueName:   queueName,
@@ -75,12 +79,45 @@ func (c *Consumer) consume() {
 	}
 }
 
+func (c *Consumer) AcquireResources(qm *proto.QueueMessage) bool {
+
+	c.sizeMux.Lock()
+	defer c.sizeMux.Unlock()
+
+	// If channel is already in use -
+	// Client should use separate channels to publish and consume
+	if !c.chResource.FlowActive() {
+		return false
+	}
+
+	if c.noAck {
+		c.activeSize += qm.MsgSize
+		return true
+	}
+
+	if c.activeSize < c.defaultSize {
+		c.activeSize += qm.MsgSize
+		return true
+	}
+
+	return false
+}
+
+func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
+
+	c.sizeMux.Lock()
+	defer c.sizeMux.Unlock()
+
+	c.activeSize -= qm.MsgSize
+}
+
 func (c *Consumer) consumeOne() {
 	c.mux.Lock()
 	defer c.mux.Unlock()
-	deliveryTag := c.cResource.GetDeliveryTag()
-	_, msg := c.cQueue.GetOne(c.cResource, c)
-	c.cResource.SendContent(&proto.BasicDeliver{
+	deliveryTag := c.chResource.GetDeliveryTag()
+
+	_, msg := c.cQueue.GetOne(c.chResource, c) // NEED TO IMPLEMENT AcquireResources and ReleaseResources for consumer - c
+	c.chResource.SendContent(&proto.BasicDeliver{
 		ConsumerTag: c.ConsumerTag,
 		DeliveryTag: deliveryTag,
 		Exchange:    msg.Exchange,

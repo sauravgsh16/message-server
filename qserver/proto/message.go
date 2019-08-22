@@ -23,15 +23,16 @@ type Message struct {
 type QueueMessage struct {
 	ID            int64
 	DeliveryCount int32
-	msgSize       int32
+	MsgSize       uint32
 }
 
-func NewMessage(m *BasicPublish) *Message {
-	return &Message{
-		ID:         NextCnt(),
-		Method:     m,
-		Exchange:   m.Exchange,
-		RoutingKey: m.RoutingKey,
-		Payload:    make([]*WireFrame, 0, 1),
-	}
+type TxMessage struct {
+	Msg       *Message
+	QueueName string
+}
+
+type IndexMessage struct {
+	ID            int64
+	Refs          int32
+	DeliveryCount int32
 }

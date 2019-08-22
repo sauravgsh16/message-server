@@ -33,17 +33,24 @@ type Channel struct {
 	deliveryTag    uint64
 	tagMux         sync.Mutex
 	txMode         bool
+	txMessages     []*proto.TxMessage
+	txLock         sync.Mutex
+	defaultSize    uint32
+	activeSize     uint32
+	sizeMux        sync.Mutex
 }
 
 func NewChannel(id uint16, conn *Connection) *Channel {
 	return &Channel{
-		id:        id,
-		server:    conn.server,
-		incoming:  make(chan *proto.WireFrame),
-		outgoing:  conn.outgoing,
-		conn:      conn,
-		consumers: make(map[string]*consumer.Consumer),
-		flow:      true,
+		id:          id,
+		server:      conn.server,
+		incoming:    make(chan *proto.WireFrame),
+		outgoing:    conn.outgoing,
+		conn:        conn,
+		consumers:   make(map[string]*consumer.Consumer),
+		flow:        true,
+		txMessages:  make([]*proto.TxMessage, 0),
+		defaultSize: uint32(2048),
 	}
 }
 
@@ -87,7 +94,11 @@ func (ch *Channel) start() {
 func (ch *Channel) SendMethod(m proto.MethodFrame) {
 	buf := bytes.NewBuffer([]byte{})
 	m.Write(buf)
-	ch.outgoing <- &proto.WireFrame{uint8(proto.FrameMethod), ch.id, buf.Bytes()}
+	ch.outgoing <- &proto.WireFrame{
+		FrameType: uint8(proto.FrameMethod),
+		Channel:   ch.id,
+		Payload:   buf.Bytes(),
+	}
 }
 
 // **************IMPLEMENT BELOW ************************
@@ -110,19 +121,67 @@ func (ch *Channel) GetDeliveryTag() uint64 {
 	return ch.deliveryTag
 }
 
+func (ch *Channel) AcquireResources(qm *proto.QueueMessage) bool {
+	ch.sizeMux.Lock()
+	defer ch.sizeMux.Unlock()
+
+	if ch.activeSize < ch.defaultSize {
+		ch.activeSize += qm.MsgSize
+		return true
+	}
+	return false
+}
+
+func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
+	ch.sizeMux.Lock()
+	defer ch.sizeMux.Unlock()
+
+	ch.activeSize -= qm.MsgSize
+}
+
 // ************************* PRIVATE METHODS ***********************************
 
 func (ch *Channel) startTxMode() {
 	ch.txMode = true
 }
 
-func (ch *Channel) commitTx() *proto.ProtoError {
+func (ch *Channel) commitTx(clsID, mtdID uint16) *proto.ProtoError {
+
+	ch.txLock.Lock()
+	defer ch.txLock.Unlock()
+
+	mapQueueWithQueueMessages, err := ch.server.msgStore.AddTxMessages(ch.txMessages)
+	if err != nil {
+		return proto.NewSoftError(500, err.Error(), clsID, mtdID)
+	}
+
+	for qName, qMsgs := range mapQueueWithQueueMessages {
+		queue, found := ch.server.queues[qName]
+		if !found {
+			continue
+		}
+		for _, qMsg := range qMsgs {
+			if !queue.Add(qMsg) {
+				// If adding message to queue was not successful,
+				// It means queue was closed.
+				// We thus need to remove reference of the message store.
+				resourceHolder := []proto.MessageResourceHolder{ch}
+				ch.server.msgStore.RemoveRef(qMsg, qName, resourceHolder)
+			}
+		}
+	}
+
+	// Clear transaction
+	ch.txMessages = make([]*proto.TxMessage, 0)
 
 	return nil
 }
 
 func (ch *Channel) rollbackTx() *proto.ProtoError {
+	ch.txLock.Lock()
+	defer ch.txLock.Unlock()
 
+	ch.txMessages = make([]*proto.TxMessage, 0)
 	return nil
 }
 
@@ -194,7 +253,7 @@ func (ch *Channel) removeConsumer(consumerTag string) error {
 	return nil
 }
 
-func (ch *Channel) publish(m *proto.BasicPublish) {
+func (ch *Channel) startPublish(m *proto.BasicPublish) {
 	ch.currentMessage = proto.NewMessage(m)
 }
 
@@ -287,10 +346,34 @@ func (ch *Channel) handleBody(frame *proto.WireFrame) *proto.ProtoError {
 		return nil
 	}
 
-	// LOGIC TO PUBLISH TO EXCHANGE
-	//
-	//       GOES HERE
-	//
-	// ****************************
+	ex, _ := ch.server.exchanges[ch.currentMessage.Method.Exchange]
+
+	if ch.txMode {
+		// Add message to a List
+		queues, err := ex.QueuesToPublish(ch.currentMessage)
+		if err != nil {
+			return err
+		}
+
+		// Add TxMessage for all queues
+		ch.txLock.Lock()
+		for _, queueName := range queues {
+			txMsg := proto.NewTxMessage(ch.currentMessage, queueName)
+			ch.txMessages = append(ch.txMessages, txMsg)
+		}
+		ch.txLock.Unlock()
+	} else {
+		// Normal mode, publish directly
+		returnMethod, err := ch.server.publish(ex, ch.currentMessage)
+		if err != nil {
+			ch.currentMessage = nil
+			return err
+		}
+		if returnMethod != nil {
+			ch.SendContent(returnMethod, ch.currentMessage)
+		}
+	}
+
+	ch.currentMessage = nil
 	return nil
 }

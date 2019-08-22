@@ -203,7 +203,8 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 			if !found || !q.Add(qm) {
 				// Need to remove queue reference from msg store
 				// particular queue message
-				s.msgStore.RemoveRef(qm, queueName)
+				mrh := make([]proto.MessageResourceHolder, 0)
+				s.msgStore.RemoveRef(qm, queueName, mrh)
 			}
 		}
 	}

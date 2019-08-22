@@ -158,7 +158,7 @@ func (ch *Channel) queueDelete(m *proto.QueueDelete) *proto.ProtoError {
 	}
 
 	if !m.NoWait {
-		ch.SendMethod(&proto.QueueDeleteOk{msgPurged})
+		ch.SendMethod(&proto.QueueDeleteOk{MessageCnt: msgPurged})
 	}
 	return nil
 }

@@ -16,7 +16,6 @@ func (ch *Channel) txRoute(mf proto.MethodFrame) *proto.ProtoError {
 		clsID, mtdID := m.MethodIdentifier()
 		return proto.NewHardError(540, "unable to route method frame", clsID, mtdID) // ERROR CODE -- IMPLEMENTATION
 	}
-	return nil
 }
 
 func (ch *Channel) txSelect(m *proto.TxSelect) *proto.ProtoError {
@@ -26,7 +25,8 @@ func (ch *Channel) txSelect(m *proto.TxSelect) *proto.ProtoError {
 }
 
 func (ch *Channel) txCommit(m *proto.TxCommit) *proto.ProtoError {
-	if err := ch.commitTx(); err != nil {
+	clsID, mtdID := m.MethodIdentifier()
+	if err := ch.commitTx(clsID, mtdID); err != nil {
 		return err
 	}
 	ch.SendMethod(&proto.TxCommitOk{})
