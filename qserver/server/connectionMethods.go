@@ -38,8 +38,8 @@ func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) 
 
 func (ch *Channel) startConnection() *proto.ProtoError {
 	ch.SendMethod(&proto.ConnectionStart{
-		Version:   1,
-		Mechanism: "PLAIN",
+		Version:    1,
+		Mechanisms: "PLAIN",
 	})
 	return nil
 }

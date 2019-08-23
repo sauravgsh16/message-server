@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"net"
@@ -56,6 +57,23 @@ func NewConnection(s *Server, n net.Conn) *Connection {
 }
 
 func (conn *Connection) openConnection() {
+
+	// Protocol Handshake
+	buf := make([]byte, 5)
+	_, err := conn.network.Read(buf)
+	if err != nil {
+		conn.hardClose()
+		return
+	}
+
+	protoBytes := []byte{'S', 'E', 'C', 'O', 'C'}
+	if bytes.Compare(buf, protoBytes) != 0 {
+		// Write on connection, for client to send correct data for handshake
+		conn.network.Write(protoBytes)
+		conn.hardClose()
+		return
+	}
+
 	// Create channel 0 and start the connection handshake
 	conn.channels[0] = NewChannel(0, conn)
 	conn.channels[0].start()
@@ -110,23 +128,23 @@ func (conn *Connection) handleOutgoing() {
 				break
 			}
 			frame := <-conn.outgoing
-			proto.WriteFrame(frame)
+			proto.WriteFrame(conn.network, frame)
 		}
 	}()
 }
 
-func (conn *Connection) handleFrame(f *proto.WireFrame) {
+func (conn *Connection) handleFrame(wf *proto.WireFrame) {
 	// if !conn.status.open && f.Channel != 0 {
 	if !conn.status.open {
 		conn.hardClose()
 		return
 	}
-	channel, ok := conn.channels[f.Channel]
+	channel, ok := conn.channels[wf.Channel]
 	if !ok {
-		channel = NewChannel(f.Channel, conn)
-		conn.channels[f.Channel] = channel
-		conn.channels[f.Channel].start()
+		channel = NewChannel(wf.Channel, conn)
+		conn.channels[wf.Channel] = channel
+		conn.channels[wf.Channel].start()
 	}
 	// Dispatch frame to channel
-	channel.incoming <- f
+	channel.incoming <- wf
 }

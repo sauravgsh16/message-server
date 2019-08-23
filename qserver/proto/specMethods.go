@@ -30,16 +30,28 @@ func (f *ConnectionStart) Read(r io.Reader) (err error) {
 		return errors.New("could not read version: " + err.Error())
 	}
 
-	f.Mechanism, err = ReadLongStr(r)
+	f.Mechanisms, err = ReadLongStr(r)
 	if err != nil {
 		return errors.New("counld not read mechanism: " + err.Error())
 	}
 	return nil
 }
 
-// COMPLETE WRITERS
 func (f *ConnectionStart) Write(w io.Writer) (err error) {
-	return
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteByte(w, f.Version); err != nil {
+		return errors.New("could not write version in ConnectionStart: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Mechanisms); err != nil {
+		return errors.New("could not write Mechanism in ConnectionStart: " + err.Error())
+	}
+
+	return nil
 }
 
 // ** ConnectionStartOk **
@@ -57,7 +69,7 @@ func (f *ConnectionStartOk) MethodName() string {
 }
 
 func (f *ConnectionStartOk) Read(r io.Reader) (err error) {
-	f.Mechanism, err = ReadLongStr(r)
+	f.Mechanism, err = ReadShortStr(r)
 	if err != nil {
 		return errors.New("could not read mechanism - on ConnStartOk: " + err.Error())
 	}
@@ -69,8 +81,20 @@ func (f *ConnectionStartOk) Read(r io.Reader) (err error) {
 	return nil
 }
 
-func (f *ConnectionStartOk) Write(w io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ConnectionStartOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShortStr(w, f.Mechanism); err != nil {
+		return errors.New("could not write Mechanism in ConnectionStartOk: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Response); err != nil {
+		return errors.New("could not write Response in ConnectionStartOk: " + err.Error())
+	}
+	return nil
 }
 
 // ** ConnectionOpen **
@@ -88,15 +112,22 @@ func (f *ConnectionOpen) MethodName() string {
 }
 
 func (f *ConnectionOpen) Read(r io.Reader) (err error) {
-	f.Host, err = ReadLongStr(r)
+	f.Host, err = ReadShortStr(r)
 	if err != nil {
 		return errors.New("could to read Host: " + err.Error())
 	}
 	return nil
 }
 
-func (f *ConnectionOpen) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ConnectionOpen) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShortStr(w, f.Host); err != nil {
+		return errors.New("could not write Host in ConnectionOpen: " + err.Error())
+	}
+	return nil
 }
 
 // ** ConnectionOpenOk **
@@ -121,7 +152,15 @@ func (f *ConnectionOpenOk) Read(r io.Reader) (err error) {
 	return nil
 }
 
-func (f *ConnectionOpenOk) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ConnectionOpenOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Response); err != nil {
+		return errors.New("could not write response in ConnectionOpenOk: " + err.Error())
+	}
 	return
 }
 
@@ -162,8 +201,28 @@ func (f *ConnectionClose) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ConnectionClose) Write(writer io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ConnectionClose) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShort(w, f.ReplyCode); err != nil {
+		return errors.New("could not write ReplyCode in ConnectionClose: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.ReplyText); err != nil {
+		return errors.New("could not write ReplyCode in ConnectionClose: " + err.Error())
+	}
+
+	if err = WriteShort(w, f.ClassId); err != nil {
+		return errors.New("could not write ClassId in ConnectionClose: " + err.Error())
+	}
+
+	if err = WriteShort(w, f.MethodId); err != nil {
+		return errors.New("could not write MethodId in ConnectionClose: " + err.Error())
+	}
+	return nil
 }
 
 // ** ConnectionCloseOk **
@@ -184,7 +243,10 @@ func (f *ConnectionCloseOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ConnectionCloseOk) Write(writer io.Writer) (err error) {
+func (f *ConnectionCloseOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -207,15 +269,23 @@ func (f *ChannelOpen) FrameType() byte {
 }
 
 func (f *ChannelOpen) Read(r io.Reader) (err error) {
-	f.Reserved, err = ReadLongStr(r)
+	f.Reserved, err = ReadShortStr(r)
 	if err != nil {
 		return errors.New("could not read reserved string in ChannelOpen: " + err.Error())
 	}
 	return
 }
 
-func (f *ChannelOpen) Write(w io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ChannelOpen) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShortStr(w, f.Reserved); err != nil {
+		return errors.New("could not write MethodId in ConnectionClose: " + err.Error())
+	}
+	return nil
 }
 
 // ChannelOpenOk
@@ -240,7 +310,15 @@ func (f *ChannelOpenOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ChannelOpenOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ChannelOpenOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Response); err != nil {
+		return errors.New("could not write MethodId in ConnectionClose: " + err.Error())
+	}
 	return
 }
 
@@ -267,8 +345,20 @@ func (f *ChannelFlow) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ChannelFlow) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ChannelFlow) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	var bits byte
+	if f.Active {
+		bits |= 1 << 0
+	}
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write Active bit in ChannelFlow: " + err.Error())
+	}
+	return nil
 }
 
 // ChannelFlowOk
@@ -294,8 +384,20 @@ func (f *ChannelFlowOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ChannelFlowOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ChannelFlowOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	var bits byte
+	if f.Active {
+		bits |= 1 << 0
+	}
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write Active bit in ChannelFlowOk: " + err.Error())
+	}
+	return nil
 }
 
 // ChannelClose
@@ -335,8 +437,28 @@ func (f *ChannelClose) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ChannelClose) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ChannelClose) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShort(w, f.ReplyCode); err != nil {
+		return errors.New("could not write ReplyCode in ChannelClose: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.ReplyText); err != nil {
+		return errors.New("could not write ReplyCode in ChannelClose: " + err.Error())
+	}
+
+	if err = WriteShort(w, f.ClassId); err != nil {
+		return errors.New("could not write ClassId in ChannelClose: " + err.Error())
+	}
+
+	if err = WriteShort(w, f.MethodId); err != nil {
+		return errors.New("could not write MethodId in ChannelClose: " + err.Error())
+	}
+	return nil
 }
 
 // ChannelCloseOk
@@ -357,7 +479,11 @@ func (f *ChannelCloseOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ChannelCloseOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ChannelCloseOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -399,8 +525,30 @@ func (f *ExchangeDeclare) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeDeclare) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *ExchangeDeclare) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Exchange in ExchangeDeclare: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Type); err != nil {
+		return errors.New("could not write Type in ExchangeDeclare: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in ExchangeDeclare: " + err.Error())
+	}
+	return nil
 }
 
 // ExchangeDeclareOk
@@ -421,7 +569,11 @@ func (f *ExchangeDeclareOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeDeclareOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeDeclareOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -456,7 +608,29 @@ func (f *ExchangeDelete) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeDelete) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeDelete) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Exchange in ExchangeDelete: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.IfUnused {
+		bits |= 1 << 0
+	}
+
+	if f.NoWait {
+		bits |= 1 << 1
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in ExchangeDelete: " + err.Error())
+	}
 	return
 }
 
@@ -478,7 +652,11 @@ func (f *ExchangeDeleteOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeDeleteOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeDeleteOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -522,7 +700,33 @@ func (f *ExchangeBind) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeBind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeBind) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Destination); err != nil {
+		return errors.New("could not write Destination in ExchangeBind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Source); err != nil {
+		return errors.New("could not write Source in ExchangeBind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write Exchange in ExchangeBind: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in ExchangeBind: " + err.Error())
+	}
 	return
 }
 
@@ -544,7 +748,11 @@ func (f *ExchangeBindOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeBindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeBindOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -588,7 +796,33 @@ func (f *ExchangeUnbind) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeUnbind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeUnbind) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Destination); err != nil {
+		return errors.New("could not write Destination in ExchangeUnbind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Source); err != nil {
+		return errors.New("could not write Source in ExchangeUnbind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write Exchange in ExchangeUnbind: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in ExchangeUnbind: " + err.Error())
+	}
 	return
 }
 
@@ -610,7 +844,11 @@ func (f *ExchangeUnbindOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ExchangeUnbindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *ExchangeUnbindOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -655,7 +893,25 @@ func (f *QueueDeclare) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueDeclare) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueDeclare) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Exchange in QueueDeclare: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in QueueDeclare: " + err.Error())
+	}
 	return
 }
 
@@ -681,19 +937,36 @@ func (f *QueueDeclareOk) Read(r io.Reader) (err error) {
 
 	f.MessageCnt, err = ReadLong(r)
 	if err != nil {
-		return errors.New("could not read message count in queue declareOk: " + err.Error())
+		return errors.New("could not read message count in QueueDeclareOk: " + err.Error())
 	}
 
 	f.ConsumerCnt, err = ReadLong(r)
 	if err != nil {
-		return errors.New("could not read message count in queue declareOk: " + err.Error())
+		return errors.New("could not read message count in QueueDeclareOk: " + err.Error())
 	}
 
 	return
 }
 
-func (f *QueueDeclareOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueDeclareOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Exchange in QueueDeclareOk: " + err.Error())
+	}
+
+	if err = WriteLong(w, f.MessageCnt); err != nil {
+		return errors.New("could not write Exchange in QueueDeclareOk: " + err.Error())
+	}
+
+	if err = WriteLong(w, f.ConsumerCnt); err != nil {
+		return errors.New("could not write Exchange in QueueDeclareOk: " + err.Error())
+	}
 	return
+
 }
 
 // QueueBind
@@ -735,7 +1008,33 @@ func (f *QueueBind) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueBind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueBind) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Destination in QueueBind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Source in QueueBind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write Exchange in QueueBind: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in QueueBind: " + err.Error())
+	}
 	return
 }
 
@@ -757,7 +1056,11 @@ func (f *QueueBindOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueBindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueBindOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -794,7 +1097,23 @@ func (f *QueueUnbind) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueUnbind) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueUnbind) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Destination in QueueUnbind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Source in QueueUnbind: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write Exchange in QueueUnbind: " + err.Error())
+	}
 	return
 }
 
@@ -816,7 +1135,11 @@ func (f *QueueUnbindOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueUnbindOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueUnbindOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -851,7 +1174,30 @@ func (f *QueueDelete) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueDelete) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueDelete) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Queue in QueueDelete: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.IfUnused {
+		bits |= 1 << 0
+	}
+	if f.IfEmpty {
+		bits |= 1 << 1
+	}
+	if f.NoWait {
+		bits |= 1 << 2
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in QueueDelete: " + err.Error())
+	}
 	return
 }
 
@@ -878,7 +1224,15 @@ func (f *QueueDeleteOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *QueueDeleteOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *QueueDeleteOk) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLong(w, f.MessageCnt); err != nil {
+		return errors.New("could not write MessageCnt in QueueDeleteOk: " + err.Error())
+	}
 	return
 }
 
@@ -931,7 +1285,32 @@ func (f *BasicConsume) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicConsume) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicConsume) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Queue); err != nil {
+		return errors.New("could not write Queue in BasicConsume: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
+		return errors.New("could not write ConsumerTag in BasicConsume: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.NoAck {
+		bits |= 1 << 0
+	}
+	if f.NoWait {
+		bits |= 1 << 1
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in BasicConsume: " + err.Error())
+	}
 	return
 }
 
@@ -958,7 +1337,14 @@ func (f *BasicConsumeOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicConsumeOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicConsumeOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
+		return errors.New("could not write ConsumerTag in BasicConsumeOk: " + err.Error())
+	}
 	return
 }
 
@@ -992,7 +1378,23 @@ func (f *BasicCancel) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicCancel) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicCancel) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
+		return errors.New("could not write ConsumerTag in BasicCancel: " + err.Error())
+	}
+
+	var bits byte
+	if f.NoWait {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in BasicCancel: " + err.Error())
+	}
 	return
 }
 
@@ -1019,7 +1421,14 @@ func (f *BasicCancelOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicCancelOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicCancelOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
+		return errors.New("could not write ConsumerTag in BasicCancelOk: " + err.Error())
+	}
 	return
 }
 
@@ -1058,7 +1467,29 @@ func (f *BasicPublish) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicPublish) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicPublish) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Exchange in BasicPublish: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write RoutingKey in BasicPublish: " + err.Error())
+	}
+
+	var bits byte
+
+	if f.Immediate {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in BasicPublish: " + err.Error())
+	}
 	return
 }
 
@@ -1100,8 +1531,27 @@ func (f *BasicReturn) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicReturn) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
-	return
+func (f *BasicReturn) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShort(w, f.ReplyCode); err != nil {
+		return errors.New("could not write ReplyCode in BasicReturn: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.ReplyText); err != nil {
+		return errors.New("could not write ReplyText in BasicReturn: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Exchange in BasicReturn: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write RoutingKey in BasicReturn: " + err.Error())
+	}
+	return nil
 }
 
 // BasicDeliver
@@ -1119,7 +1569,7 @@ func (f *BasicDeliver) FrameType() byte {
 }
 
 func (f *BasicDeliver) Read(r io.Reader) (err error) {
-	f.ConsumerTag, err = ReadLongStr(r)
+	f.ConsumerTag, err = ReadShortStr(r)
 	if err != nil {
 		return errors.New("could not read consumer tag name in BasicDeliver: " + err.Error())
 	}
@@ -1142,7 +1592,27 @@ func (f *BasicDeliver) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicDeliver) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicDeliver) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteShortStr(w, f.ConsumerTag); err != nil {
+		return errors.New("could not write ConsumerTag in BasicDeliver: " + err.Error())
+	}
+
+	if err = WriteLongLong(w, f.DeliveryTag); err != nil {
+		return errors.New("could not write ReplyText in BasicDeliver: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.Exchange); err != nil {
+		return errors.New("could not write Exchange in BasicDeliver: " + err.Error())
+	}
+
+	if err = WriteLongStr(w, f.RoutingKey); err != nil {
+		return errors.New("could not write RoutingKey in BasicDeliver: " + err.Error())
+	}
 	return
 }
 
@@ -1176,7 +1646,23 @@ func (f *BasicAck) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicAck) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicAck) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongLong(w, f.DeliveryTag); err != nil {
+		return errors.New("could not write DeliveryTag in BasicAck: " + err.Error())
+	}
+
+	var bits byte
+	if f.Multiple {
+		bits |= 1 << 0
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in BasicAck: " + err.Error())
+	}
 	return
 }
 
@@ -1203,7 +1689,7 @@ func (f *BasicNack) Read(r io.Reader) (err error) {
 
 	bits, err := ReadOctet(r)
 	if err != nil {
-		return errors.New("could not read bits in BasicAck: " + err.Error())
+		return errors.New("could not read bits in BasicNack: " + err.Error())
 	}
 
 	f.Multiple = (bits&(1<<0) > 0)
@@ -1211,7 +1697,27 @@ func (f *BasicNack) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *BasicNack) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *BasicNack) Write(w io.Writer) (err error) {
+
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
+
+	if err = WriteLongLong(w, f.DeliveryTag); err != nil {
+		return errors.New("could not write DeliveryTag in BasicNack: " + err.Error())
+	}
+
+	var bits byte
+	if f.Multiple {
+		bits |= 1 << 0
+	}
+	if f.Requeue {
+		bits |= 1 << 1
+	}
+
+	if err = WriteOctet(w, bits); err != nil {
+		return errors.New("could not write bits in BasicNack: " + err.Error())
+	}
 	return
 }
 
@@ -1244,7 +1750,10 @@ func (f *TxSelect) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxSelect) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxSelect) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -1266,7 +1775,10 @@ func (f *TxSelectOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxSelectOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxSelectOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -1288,7 +1800,10 @@ func (f *TxCommit) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxCommit) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxCommit) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -1310,7 +1825,10 @@ func (f *TxCommitOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxCommitOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxCommitOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -1332,7 +1850,10 @@ func (f *TxRollback) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxRollback) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxRollback) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }
 
@@ -1354,6 +1875,9 @@ func (f *TxRollbackOk) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *TxRollbackOk) Write(r io.Writer) (err error) { // IMPLEMENT IT!!
+func (f *TxRollbackOk) Write(w io.Writer) (err error) {
+	if err = WriteMethodIdentifier(w, f); err != nil {
+		return err
+	}
 	return
 }

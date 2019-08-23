@@ -1,22 +1,10 @@
 
-channel.go
-    ch.SendContent
-    ch.commitTx
-    ch.rollbackTx
-
-
-specMethods.go
-    all write methods - proto
 
 
 server.go
-    1) conn.server.deleteQueuesForConn
-    2) publish - doing
-    3) add msgStore to all required methods
-    4) Check if two DB - server and message are required.
-
-exchange.go
-    1) Close
+    1) server.publish -- understand message store and persistence **
+    2) add msgStore to all required methods
+    3) Check if two DB - server and message are required.
 
 queue.go
     1) Add
@@ -26,3 +14,16 @@ store.go
     2) RemoveRef
 
 Check for RETURN CODES ALL OVER REPO, IMPLEMENT CONSTANTS
+
+Where to start from :
+1) Go through the flow again - add all that you find missing
+   Start with connection.go 
+   - For starters - need to add mechanism for handshake.
+   - Once that is done, go through flow again.
+
+channel
+    AddUnackedMessage
+    nackOne
+    nackBelow
+    ackOne
+    ackBelow

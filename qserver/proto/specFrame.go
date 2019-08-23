@@ -5,8 +5,8 @@ package proto
 // ***********************
 
 type ConnectionStart struct {
-	Version   byte
-	Mechanism string
+	Version    byte
+	Mechanisms string
 }
 
 type ConnectionStartOk struct {

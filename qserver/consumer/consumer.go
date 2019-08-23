@@ -44,6 +44,7 @@ func NewConsumer(ms *store.MsgStore, cr ChannelResource, consumerTag string, cq 
 		cQueue:      cq,
 		queueName:   queueName,
 		noAck:       noAck,
+		defaultSize: defaultSize,
 	}
 }
 
@@ -99,7 +100,6 @@ func (c *Consumer) AcquireResources(qm *proto.QueueMessage) bool {
 		c.activeSize += qm.MsgSize
 		return true
 	}
-
 	return false
 }
 
@@ -114,9 +114,20 @@ func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
 func (c *Consumer) consumeOne() {
 	c.mux.Lock()
 	defer c.mux.Unlock()
+
 	deliveryTag := c.chResource.GetDeliveryTag()
 
-	_, msg := c.cQueue.GetOne(c.chResource, c) // NEED TO IMPLEMENT AcquireResources and ReleaseResources for consumer - c
+	_, msg := c.cQueue.GetOne(c.chResource, c) // NEED TO IMPLEMENT
+	/*
+		TODO
+		if !c.noAck {
+			We need to add this to a list of messages which have not
+			been acknowledged yet.
+		} else {
+			We remove the reference of this message from the msg store
+			as we will not see this message anymore.
+		}
+	*/
 	c.chResource.SendContent(&proto.BasicDeliver{
 		ConsumerTag: c.ConsumerTag,
 		DeliveryTag: deliveryTag,

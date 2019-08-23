@@ -45,6 +45,8 @@ func NewServer(dbFilePath string) *Server {
 		msgStore:        msgStore,
 	}
 
+	s.initSystemExchanges()
+
 	go s.deleteExchangeMonitor()
 	go s.deleteQueueMonitor()
 	return s
@@ -57,6 +59,25 @@ func (s *Server) OpenConnection(conn net.Conn) {
 }
 
 // ****** PRIVATE METHODS *********
+
+func (s *Server) initSystemExchanges() {
+	s.registerDefaultExchange("proto.DIRECT", exchange.EX_DIRECT)
+	s.registerDefaultExchange("proto.FANOUT", exchange.EX_FANOUT)
+}
+
+func (s *Server) registerDefaultExchange(name string, extype uint8) {
+	_, alreadyPresent := s.exchanges[name]
+	if !alreadyPresent {
+		ex := exchange.NewExchange(
+			name,
+			extype,
+			s.exchangeDeleter,
+		)
+		// TODO
+		// PERSIST DB -- WHEN DB IS IMPLEMENTED
+		s.addExchange(ex)
+	}
+}
 
 func (s *Server) deleteExchangeMonitor() {
 	for e := range s.exchangeDeleter {
@@ -186,9 +207,6 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 		return s.basicReturnMsg(msg, 313, "No available queues found"), nil
 	}
 
-	// TODO:
-	// CHECK IF IMMEDIATE CONSUMPTION OF QUEUE IS REQUIRED
-
 	// Add message and queue to message store.
 	mapQueueWithQueueMessages, errObj := s.msgStore.AddMessage(msg, queues)
 	if errObj != nil {
@@ -196,6 +214,25 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 		return nil, proto.NewSoftError(500, errObj.Error(), clsID, mtdID)
 	}
 
+	// TODO:
+	// CHECK IF IMMEDIATE CONSUMPTION OF QUEUE IS REQUIRED
+
+	if msg.Method.Immediate {
+		for _, queueName := range queues {
+			qms := mapQueueWithQueueMessages[queueName]
+			for _, qm := range qms {
+				queue, found := s.queues[queueName]
+				if !found {
+					// Queue could have been deleted
+					continue
+				}
+				msgConsumed := queue.ConsumeImmediate(qm)
+				// BIG CHECK --
+				// HANDLING MESSAGE
+				//
+			}
+		}
+	}
 	for _, queueName := range queues {
 		qMsgs := mapQueueWithQueueMessages[queueName]
 		for _, qm := range qMsgs {

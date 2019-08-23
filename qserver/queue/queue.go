@@ -12,7 +12,7 @@ type Queue struct {
 	Name        string
 	list        *List
 	Closed      bool
-	qmux        sync.Mutex
+	mux         sync.Mutex
 	consumers   []*consumer.Consumer
 	consumerMux sync.RWMutex
 	ConnId      int64
@@ -45,21 +45,29 @@ func (q *Queue) ConsumerCount() uint32 {
 //
 
 func (q *Queue) Close() {
-	q.qmux.Lock()
-	defer q.qmux.Unlock()
+	q.mux.Lock()
+	defer q.mux.Unlock()
 	q.Closed = true
 }
 
 func (q *Queue) Add(qm *proto.QueueMessage) bool {
-	return true
+	q.mux.Lock()
+	defer q.mux.Unlock()
+
+	if q.Closed {
+		return false
+	}
+	q.list.Append(qm)
+
+	// IMCOMPLETE
 }
 
 func (q *Queue) Delete(ifUnused bool, ifEmpty bool) (uint32, error) {
 	if !q.Closed {
 		panic("Tryin to delete unclosed Queue")
 	}
-	q.qmux.Lock()
-	defer q.qmux.Unlock()
+	q.mux.Lock()
+	defer q.mux.Unlock()
 
 	// Check if queue is being used
 	used := !ifUnused || len(q.consumers) == 0

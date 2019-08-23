@@ -25,7 +25,7 @@ type Channel struct {
 	conn           *Connection
 	consumers      map[string]*consumer.Consumer
 	consumerMux    sync.Mutex
-	sendLock       sync.Mutex
+	sendMux        sync.Mutex
 	state          uint8
 	currentMessage *proto.Message
 	flow           bool
@@ -53,6 +53,75 @@ func NewChannel(id uint16, conn *Connection) *Channel {
 		defaultSize: uint32(2048),
 	}
 }
+
+func (ch *Channel) SendMethod(m proto.MethodFrame) {
+	buf := bytes.NewBuffer([]byte{})
+	m.Write(buf)
+	ch.outgoing <- &proto.WireFrame{
+		FrameType: uint8(proto.FrameMethod),
+		Channel:   ch.id,
+		Payload:   buf.Bytes(),
+	}
+}
+
+func (ch *Channel) SendContent(mf proto.MethodFrame, msg *proto.Message) {
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	buf := bytes.NewBuffer(make([]byte, 0)) // --------> POTENTIAL POINT OF FAILURE *************
+
+	// Write Headers
+	proto.WriteShort(buf, msg.Header.Class)
+	proto.WriteLongLong(buf, msg.Header.BodySize)
+
+	// Send Method
+	ch.SendMethod(mf)
+
+	// Send Header
+	ch.outgoing <- &proto.WireFrame{
+		FrameType: proto.FrameHeader,
+		Channel:   ch.id,
+		Payload:   buf.Bytes(),
+	}
+
+	// Send body
+	for _, b := range msg.Payload {
+		b.Channel = ch.id
+		ch.outgoing <- b
+	}
+}
+
+func (ch *Channel) FlowActive() bool {
+	return ch.flow
+}
+
+func (ch *Channel) GetDeliveryTag() uint64 {
+	ch.tagMux.Lock()
+	defer ch.tagMux.Unlock()
+
+	ch.deliveryTag++
+	return ch.deliveryTag
+}
+
+func (ch *Channel) AcquireResources(qm *proto.QueueMessage) bool {
+	ch.sizeMux.Lock()
+	defer ch.sizeMux.Unlock()
+
+	if ch.activeSize < ch.defaultSize {
+		ch.activeSize += qm.MsgSize
+		return true
+	}
+	return false
+}
+
+func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
+	ch.sizeMux.Lock()
+	defer ch.sizeMux.Unlock()
+
+	ch.activeSize -= qm.MsgSize
+}
+
+// ************************* PRIVATE METHODS ***********************************
 
 func (ch *Channel) start() {
 	if ch.state == 0 {
@@ -91,55 +160,44 @@ func (ch *Channel) start() {
 	}()
 }
 
-func (ch *Channel) SendMethod(m proto.MethodFrame) {
-	buf := bytes.NewBuffer([]byte{})
-	m.Write(buf)
-	ch.outgoing <- &proto.WireFrame{
-		FrameType: uint8(proto.FrameMethod),
-		Channel:   ch.id,
-		Payload:   buf.Bytes(),
+func (ch *Channel) sendError(err *proto.ProtoError) {
+	if err.Soft {
+		fmt.Println("Sending channel error: ", err.Msg)
+		ch.state = CH_CLOSING
+		ch.SendMethod(&proto.ChannelClose{
+			ReplyCode: err.Code,
+			ReplyText: err.Msg,
+			ClassId:   err.Class,
+			MethodId:  err.Method,
+		})
+	} else {
+		ch.conn.closeConnWithError(err)
 	}
 }
 
-// **************IMPLEMENT BELOW ************************
-// ********************************************************
-
-func (ch *Channel) SendContent(mf proto.MethodFrame, msg *proto.Message) {}
-
-//  *****************************************************
-// *******************************************************
-
-func (ch *Channel) FlowActive() bool {
-	return ch.flow
-}
-
-func (ch *Channel) GetDeliveryTag() uint64 {
-	ch.tagMux.Lock()
-	defer ch.tagMux.Unlock()
-
-	ch.deliveryTag++
-	return ch.deliveryTag
-}
-
-func (ch *Channel) AcquireResources(qm *proto.QueueMessage) bool {
-	ch.sizeMux.Lock()
-	defer ch.sizeMux.Unlock()
-
-	if ch.activeSize < ch.defaultSize {
-		ch.activeSize += qm.MsgSize
-		return true
+func (ch *Channel) shutdown() {
+	if ch.state == CH_CLOSED {
+		fmt.Printf("channel already closed, shutdown performed on %d\n", ch.id)
+		return
 	}
-	return false
+	ch.state = CH_CLOSED
+	// unregister channel from connection
+	ch.conn.removeChannel(ch.id)
+	// remove any consumer associated with this channel
+	for _, c := range ch.consumers {
+		ch.removeConsumer(c.ConsumerTag)
+	}
 }
 
-func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
-	ch.sizeMux.Lock()
-	defer ch.sizeMux.Unlock()
-
-	ch.activeSize -= qm.MsgSize
+func (ch *Channel) close(code uint16, text string, clsID uint16, mtdID uint16) {
+	ch.SendMethod(&proto.ChannelClose{
+		ReplyCode: code,
+		ReplyText: text,
+		ClassId:   clsID,
+		MethodId:  mtdID,
+	})
+	ch.state = CH_CLOSING
 }
-
-// ************************* PRIVATE METHODS ***********************************
 
 func (ch *Channel) startTxMode() {
 	ch.txMode = true
@@ -185,21 +243,6 @@ func (ch *Channel) rollbackTx() *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) sendError(err *proto.ProtoError) {
-	if err.Soft {
-		fmt.Println("Sending channel error: ", err.Msg)
-		ch.state = CH_CLOSING
-		ch.SendMethod(&proto.ChannelClose{
-			ReplyCode: err.Code,
-			ReplyText: err.Msg,
-			ClassId:   err.Class,
-			MethodId:  err.Method,
-		})
-	} else {
-		ch.conn.closeConnWithError(err)
-	}
-}
-
 func (ch *Channel) activateFlow(active bool) {
 	if ch.flow == active {
 		return
@@ -217,7 +260,7 @@ func (ch *Channel) activateFlow(active bool) {
 func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.ProtoError {
 	clsID, mtdID := m.MethodIdentifier()
 
-	c := consumer.NewConsumer(ch.server.msgStore, ch, m.ConsumerTag, q, q.Name, m.NoAck)
+	c := consumer.NewConsumer(ch.server.msgStore, ch, m.ConsumerTag, q, q.Name, m.NoAck, ch.defaultSize)
 	ch.consumerMux.Lock()
 	defer ch.consumerMux.Unlock()
 
@@ -255,20 +298,6 @@ func (ch *Channel) removeConsumer(consumerTag string) error {
 
 func (ch *Channel) startPublish(m *proto.BasicPublish) {
 	ch.currentMessage = proto.NewMessage(m)
-}
-
-func (ch *Channel) shutdown() {
-	if ch.state == CH_CLOSED {
-		fmt.Printf("channel already closed, shutdown performed on %d\n", ch.id)
-		return
-	}
-	ch.state = CH_CLOSED
-	// unregister channel from connection
-	ch.conn.removeChannel(ch.id)
-	// remove any consumer associated with this channel
-	for _, c := range ch.consumers {
-		ch.removeConsumer(c.ConsumerTag)
-	}
 }
 
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
@@ -312,7 +341,7 @@ func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.ProtoError {
 	}
 
 	if ch.currentMessage.Header != nil {
-		return proto.NewSoftError(500, "unexpected - already seen header", 0, 0)
+		return proto.NewSoftError(500, "unexpected - header already seen", 0, 0)
 	}
 
 	var header = &proto.HeaderFrame{}
@@ -325,7 +354,7 @@ func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) handleBody(frame *proto.WireFrame) *proto.ProtoError {
+func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.ProtoError {
 
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)
@@ -335,7 +364,7 @@ func (ch *Channel) handleBody(frame *proto.WireFrame) *proto.ProtoError {
 		return proto.NewSoftError(500, "unexpected body frame - no header yet", 0, 0)
 	}
 
-	ch.currentMessage.Payload = append(ch.currentMessage.Payload, frame)
+	ch.currentMessage.Payload = append(ch.currentMessage.Payload, wf)
 
 	var size = uint64(0)
 	for _, body := range ch.currentMessage.Payload {

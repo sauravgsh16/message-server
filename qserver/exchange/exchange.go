@@ -34,6 +34,8 @@ func NewExchange(name string, extype uint8, deleteChan chan *Exchange) *Exchange
 	}
 }
 
+// NEED TO CHECK - RABBITMQ DOC
+// GETS CALLED FROM exchangeDeclare
 func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (*Exchange, *proto.ProtoError) {
 	extype, err := exchangeNameToType(m.Type)
 	if err != nil {
@@ -43,6 +45,10 @@ func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (
 
 	ex := NewExchange(m.Exchange, extype, exDeleter)
 	return ex, nil
+}
+
+func (ex *Exchange) Close() {
+	ex.Closed = true
 }
 
 func exchangeNameToType(extype string) (uint8, error) {
@@ -128,5 +134,3 @@ func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.ProtoE
 
 	return queues, nil
 }
-
-func (ex *Exchange) Close() {} // IMPLEMENT

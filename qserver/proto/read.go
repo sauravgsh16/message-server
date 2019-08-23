@@ -68,6 +68,19 @@ func ReadLongLong(buf io.Reader) (data uint64, err error) {
 	return data, nil
 }
 
+func ReadShortStr(buf io.Reader) (data string, err error) {
+	var lenght uint8
+	if err = binary.Read(buf, binary.BigEndian, &lenght); err != nil {
+		return "", err
+	}
+
+	slice := make([]byte, lenght)
+	if err = binary.Read(buf, binary.BigEndian, slice); err != nil {
+		return "", err
+	}
+	return string(slice), nil
+}
+
 func readLongStr(buf io.Reader) ([]byte, error) {
 	var length uint32
 	if err := binary.Read(buf, binary.BigEndian, &length); err != nil {
