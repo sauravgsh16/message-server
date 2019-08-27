@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sauravgsh16/secoc-third/qserver/store"
+
 	"github.com/sauravgsh16/secoc-third/qserver/consumer"
 	"github.com/sauravgsh16/secoc-third/qserver/proto"
 )
@@ -20,15 +22,17 @@ type Queue struct {
 	deleteChan         chan *Queue
 	readyChan          chan bool
 	currentConsumerIdx int
+	msgStore           *store.MsgStore
 }
 
-func NewQueue(name string, connId int64, deleteChan chan *Queue) *Queue {
+func NewQueue(name string, connId int64, deleteChan chan *Queue, msgStore *store.MsgStore) *Queue {
 	return &Queue{
 		Name:       name,
 		list:       newlist(),
-		consumers:  make([]*consumer.Consumer, 0),
+		consumers:  make([]*consumer.Consumer, 0, 1),
 		deleteChan: deleteChan,
-		readyChan:  make(chan bool),
+		readyChan:  make(chan bool, 1),
+		msgStore:   msgStore,
 	}
 }
 
@@ -96,9 +100,22 @@ func (q *Queue) Delete(ifUnused bool, ifEmpty bool) (uint32, error) {
 	}
 
 	// Send cancel to all consumers of queue
-	q.sendCancelConsumers()
+	q.cancelConsumers()
 	// Purge queue data
 	return q.purgeQueueData(), nil
+}
+
+func (q *Queue) ConsumeImmediate(qm *proto.QueueMessage) bool {
+	q.consumerMux.Lock()
+	defer q.consumerMux.Unlock()
+
+	for _, consumer := range q.consumers {
+		msg, acquired := q.msgStore.Get(qm, consumer.ResourceHolders())
+		if acquired {
+			return consumer.ConsumeImmediate(msg, qm)
+		}
+	}
+	return false
 }
 
 func (q *Queue) processSingleEntry() {
@@ -116,8 +133,6 @@ func (q *Queue) processSingleEntry() {
 	}
 }
 
-// ** Consumer related receivers **
-
 func (q *Queue) ConsumerCount() uint32 {
 	return uint32(len(q.consumers))
 }
@@ -133,15 +148,12 @@ func (q *Queue) AddConsumer(c *consumer.Consumer) (uint16, error) {
 	return 0, nil // Check: if it really needs to return the number of consumers ?
 }
 
-func (q *Queue) sendCancelConsumers() {
+func (q *Queue) cancelConsumers() {
 	q.consumerMux.Lock()
 	defer q.consumerMux.Unlock()
 
 	for _, c := range q.consumers {
-		// ************* TODO *******************
-		// Commenting below line
-		// c.SendCancel()
-		// **************************************
+		c.SendCancel()
 		c.Stop()
 	}
 	q.consumers = make([]*consumer.Consumer, 0, 1)
@@ -158,7 +170,9 @@ func (q *Queue) removeConsumers(consumerTag string) {
 		}
 	}
 	if len(q.consumers) == 0 {
-		// INCOMPLETE
+		q.currentConsumerIdx = 0
+	} else {
+		q.currentConsumerIdx = q.currentConsumerIdx % len(q.consumers)
 	}
 }
 
@@ -169,5 +183,21 @@ func (q *Queue) purgeQueueData() uint32 {
 }
 
 func (q *Queue) GetOne(mrh ...proto.MessageResourceHolder) (*proto.QueueMessage, *proto.Message) {
-	return nil, nil
+	q.mux.Lock()
+	defer q.mux.Unlock()
+
+	if q.Closed || q.Len() == 0 {
+		return nil, nil
+	}
+
+	qm := q.list.Front().(*proto.QueueMessage)
+	if qm == nil {
+		return nil, nil
+	}
+	msg, acquired := q.msgStore.Get(qm, mrh)
+	if !acquired {
+		return nil, nil
+	}
+	q.list.Remove()
+	return qm, msg
 }

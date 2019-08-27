@@ -26,15 +26,16 @@ type Server struct {
 
 // INCASE - THE SERVER AND THE MESSAGE DB NEEDS TO BE SEPARATE - THIS IS THE POINT
 // WHERE WE ACCEPT TO DIFFERENT DB PATHS.
-func NewServer(dbFilePath string) *Server {
+func NewServer(dbFilePath, msgStoreFilePath string) *Server {
 	db, err := bolt.Open(dbFilePath, 0666, nil)
 	if err != nil {
 		panic(err.Error())
 	}
-	msgStore, err := store.New(db)
+	msgStore, err := store.New(msgStoreFilePath)
 	if err != nil {
 		panic("unable to create message store")
 	}
+	msgStore.Start()
 	var s = &Server{
 		exchanges:       make(map[string]*exchange.Exchange),
 		queues:          make(map[string]*queue.Queue),

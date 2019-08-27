@@ -41,7 +41,7 @@ func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.ProtoError {
 	}
 
 	// Create new Queue
-	q = queue.NewQueue(m.Queue, ch.conn.id, ch.server.queueDeleter)
+	q = queue.NewQueue(m.Queue, ch.conn.id, ch.server.queueDeleter, ch.server.msgStore)
 	// Add Queue
 	err := ch.server.addQueue(q)
 	if err != nil {

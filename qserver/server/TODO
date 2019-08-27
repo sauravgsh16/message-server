@@ -1,17 +1,22 @@
 
-
-
 server.go
     1) server.publish -- understand message store and persistence **
     2) add msgStore to all required methods
     3) Check if two DB - server and message are required.
 
 queue.go
-    1) Add
+    1) PERSIST LOGIC
 
 store.go
-    1) AddMessage
-    2) RemoveRef
+    2) MessageCount
+    3) IndexCount
+    10) GetNoChecks
+    15) GetAndDecrRef
+
+consumer.go
+    1) MessageResourceHolders - done
+    2) ConsumeImmediate - done
+    3) SendCancel - done
 
 Check for RETURN CODES ALL OVER REPO, IMPLEMENT CONSTANTS
 

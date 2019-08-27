@@ -35,4 +35,5 @@ type IndexMessage struct {
 	ID            int64
 	Refs          int32
 	DeliveryCount int32
+	Persisted     bool
 }

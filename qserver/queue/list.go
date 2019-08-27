@@ -50,15 +50,15 @@ func (l *List) append(d qData) {
 	last.next = n
 }
 
-func (l *List) remove() (qData, error) {
+func (l *List) remove() error {
 	if l.Root == nil {
-		return nil, errors.New("Cannot remove from empty list")
+		return errors.New("Cannot remove from empty list")
 	}
 	n := *l.Root
 	l.Root = n.next
 	n.next = nil // remove reference to next pointer
 	l.len--
-	return n.value, nil
+	return nil
 }
 
 // Append to end of list
@@ -67,13 +67,17 @@ func (l *List) Append(d qData) {
 }
 
 // Remove one msg
-func (l *List) Remove() qData {
-	d, err := l.remove()
-	if err != nil {
-		// return qData{data: sh.Message{Body: make([]byte, 0)}}
+func (l *List) Remove() {
+	if err := l.remove(); err != nil {
+		panic(err.Error())
+	}
+}
+
+func (l *List) Front() qData {
+	if l.len == 0 {
 		return nil
 	}
-	return d
+	return l.Root.value
 }
 
 func (l *List) String() string {

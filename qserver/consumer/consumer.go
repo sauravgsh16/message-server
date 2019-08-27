@@ -74,12 +74,6 @@ func (c *Consumer) Ping() {
 	}
 }
 
-func (c *Consumer) consume() {
-	for range c.incoming {
-		c.consumeOne()
-	}
-}
-
 func (c *Consumer) AcquireResources(qm *proto.QueueMessage) bool {
 
 	c.sizeMux.Lock()
@@ -111,13 +105,51 @@ func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
 	c.activeSize -= qm.MsgSize
 }
 
+func (c *Consumer) SendCancel() {
+	c.chResource.SendMethod(&proto.BasicCancel{
+		ConsumerTag: c.ConsumerTag,
+		NoWait:      true,
+	})
+}
+
+func (c *Consumer) ConsumeImmediate(msg *proto.Message, qm *proto.QueueMessage) bool {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	var tag uint64 = 0
+
+	// TODO:
+	/*
+		if !c.noAck {
+			tag := c.chResource.ADDUNACKMESSAGE()
+		}
+	*/
+	c.chResource.SendContent(&proto.BasicDeliver{
+		ConsumerTag: c.ConsumerTag,
+		DeliveryTag: tag,
+		Exchange:    msg.Exchange,
+		RoutingKey:  msg.RoutingKey,
+	}, msg)
+	return true
+}
+
+func (c *Consumer) ResourceHolders() []proto.MessageResourceHolder {
+	return []proto.MessageResourceHolder{c, c.chResource}
+}
+
+func (c *Consumer) consume() {
+	for range c.incoming {
+		c.consumeOne()
+	}
+}
+
 func (c *Consumer) consumeOne() {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	deliveryTag := c.chResource.GetDeliveryTag()
 
-	_, msg := c.cQueue.GetOne(c.chResource, c) // NEED TO IMPLEMENT
+	_, msg := c.cQueue.GetOne(c.chResource, c)
 	/*
 		TODO
 		if !c.noAck {
