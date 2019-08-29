@@ -3,13 +3,12 @@ package server
 import (
 	"fmt"
 
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/binding"
-
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
 )
 
-func (ch *Channel) queueRoute(mf proto.MethodFrame) *proto.ProtoError {
+func (ch *Channel) queueRoute(mf proto.MethodFrame) *proto.Error {
 	switch method := mf.(type) {
 	case *proto.QueueDeclare:
 		return ch.queueDeclare(method)
@@ -24,7 +23,7 @@ func (ch *Channel) queueRoute(mf proto.MethodFrame) *proto.ProtoError {
 	return proto.NewHardError(540, "Not Implemented Queue method", clsID, mtdID)
 }
 
-func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.ProtoError {
+func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	q, ok := ch.conn.server.queues[m.Queue]
@@ -58,7 +57,7 @@ func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) queueBind(m *proto.QueueBind) *proto.ProtoError {
+func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	if len(m.Queue) == 0 {
@@ -102,7 +101,7 @@ func (ch *Channel) queueBind(m *proto.QueueBind) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.ProtoError {
+func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	if len(m.Queue) == 0 {
@@ -142,7 +141,7 @@ func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) queueDelete(m *proto.QueueDelete) *proto.ProtoError {
+func (ch *Channel) queueDelete(m *proto.QueueDelete) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	if len(m.Queue) == 0 {

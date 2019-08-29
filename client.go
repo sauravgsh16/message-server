@@ -1,60 +1,50 @@
 package main
 
 import (
-        "fmt"
-        "net"
-        "strconv"
+	"log"
 
-        _ "github.com/sauravgsh16/secoc-third/shared"
+	"github.com/streadway/amqp"
 )
 
-
-func main() {
-        c, err := net.Dial("tcp", ":9000")
-        if err != nil {
-                fmt.Println(err)
-                return
-        }
-        defer c.Close()
-        text := "Hello, World"
-        size := strconv.Itoa(len(text))
-        c.Write([]byte(size))
-        c.Write([]byte(text))
-        fmt.Printf("Connected to server")
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
 }
 
-/*
 func main() {
-        c, err := rpc.Dial("tcp", ":1234")
-        if err != nil {
-                fmt.Println(err)
-                return
-        }
-        defer c.Close()
+	conn, err := amqp.Dial("localhost:9000")
+	failOnError(err, "Failed to connect to qserver")
+	defer conn.Close()
 
-        a1 := &shared.Value{A:2, B:3}
-        var r1 int
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
 
-        err = c.Call("V.Add", a1, &r1)
-        if err != nil {
-                fmt.Println(err)
-                return
-        }
-        fmt.Printf("Reply r1: %d\n", r1)
+	/*
+			err = ch.ExchangeDeclare(
+				"logs",   // name
+				"fanout", // type
+				true,     // durable
+				false,    // auto-deleted
+				false,    // internal
+				false,    // no-wait
+				nil,      // arguments
+			)
+			failOnError(err, "Failed to declare an exchange")
 
-        a2 := &shared.Name{N:"foo"}
-        err = c.Call("N.AddNum", a2, &r1)
-        if err != nil {
-                fmt.Println("HERE", err)
-                return
-        }
+			body := bodyFrom(os.Args)
+			err = ch.Publish(
+				"logs", // exchange
+				"",     // routing key
+				false,  // mandatory
+				false,  // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(body),
+				})
+			failOnError(err, "Failed to publish a message")
 
-        r2 := []string{}
-        err = c.Call("N.GetName", a2, &r2)
-        if err != nil {
-                fmt.Printf("NOW HERE %v\n", err)
-        }
-
-        fmt.Printf("Reply r2: %+v\n", r2)
+		        log.Printf(" [x] Sent %s", body)
+	*/
 }
-*/

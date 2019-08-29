@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/consumer"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
 )
 
@@ -54,9 +54,9 @@ func NewChannel(id uint16, conn *Connection) *Channel {
 	}
 }
 
-func (ch *Channel) SendMethod(m proto.MethodFrame) {
+func (ch *Channel) SendMethod(mf proto.MethodFrame) {
 	buf := bytes.NewBuffer([]byte{})
-	m.Write(buf)
+	mf.Write(buf)
 	ch.outgoing <- &proto.WireFrame{
 		FrameType: uint8(proto.FrameMethod),
 		Channel:   ch.id,
@@ -134,7 +134,7 @@ func (ch *Channel) start() {
 			if ch.state == CH_CLOSED {
 				break
 			}
-			var err *proto.ProtoError
+			var err *proto.Error
 			frame := <-ch.incoming
 			switch {
 			case frame.FrameType == uint8(proto.FrameMethod):
@@ -160,7 +160,7 @@ func (ch *Channel) start() {
 	}()
 }
 
-func (ch *Channel) sendError(err *proto.ProtoError) {
+func (ch *Channel) sendError(err *proto.Error) {
 	if err.Soft {
 		fmt.Println("Sending channel error: ", err.Msg)
 		ch.state = CH_CLOSING
@@ -203,7 +203,7 @@ func (ch *Channel) startTxMode() {
 	ch.txMode = true
 }
 
-func (ch *Channel) commitTx(clsID, mtdID uint16) *proto.ProtoError {
+func (ch *Channel) commitTx(clsID, mtdID uint16) *proto.Error {
 
 	ch.txLock.Lock()
 	defer ch.txLock.Unlock()
@@ -235,7 +235,7 @@ func (ch *Channel) commitTx(clsID, mtdID uint16) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) rollbackTx() *proto.ProtoError {
+func (ch *Channel) rollbackTx() *proto.Error {
 	ch.txLock.Lock()
 	defer ch.txLock.Unlock()
 
@@ -257,7 +257,7 @@ func (ch *Channel) activateFlow(active bool) {
 	}
 }
 
-func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.ProtoError {
+func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	c := consumer.NewConsumer(ch.server.msgStore, ch, m.ConsumerTag, q, q.Name, m.NoAck, ch.defaultSize)
@@ -300,7 +300,7 @@ func (ch *Channel) startPublish(m *proto.BasicPublish) {
 	ch.currentMessage = proto.NewMessage(m)
 }
 
-func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
+func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.Error {
 	var methodReader = bytes.NewReader(frame.Payload)
 
 	var methodFrame, err = proto.ReadMethod(methodReader)
@@ -334,7 +334,7 @@ func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.ProtoError {
 	}
 }
 
-func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.ProtoError {
+func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.Error {
 
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)
@@ -354,7 +354,7 @@ func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.ProtoError {
+func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
 
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)

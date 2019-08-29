@@ -3,7 +3,7 @@ package consumer
 import (
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/store"
 )
 

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/sauravgsh16/secoc-third/allocate"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 )
 
 var counter int64
@@ -62,6 +62,7 @@ func (conn *Connection) openConnection() {
 	buf := make([]byte, 5)
 	_, err := conn.network.Read(buf)
 	if err != nil {
+		fmt.Printf("Error reading protocol header")
 		conn.hardClose()
 		return
 	}
@@ -91,7 +92,7 @@ func (conn *Connection) hardClose() {
 	}
 }
 
-func (conn *Connection) closeConnWithError(err *proto.ProtoError) {
+func (conn *Connection) closeConnWithError(err *proto.Error) {
 	fmt.Println("Sending connection close: ", err.Msg)
 	conn.status.closing = true
 	conn.channels[0].SendMethod(&proto.ConnectionClose{

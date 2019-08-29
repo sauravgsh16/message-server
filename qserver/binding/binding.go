@@ -5,7 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 )
 
 // Binding struct

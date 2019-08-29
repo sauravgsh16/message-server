@@ -1,10 +1,10 @@
 package server
 
 import (
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 )
 
-func (ch *Channel) txRoute(mf proto.MethodFrame) *proto.ProtoError {
+func (ch *Channel) txRoute(mf proto.MethodFrame) *proto.Error {
 	switch m := mf.(type) {
 	case *proto.TxSelect:
 		return ch.txSelect(m)
@@ -18,13 +18,13 @@ func (ch *Channel) txRoute(mf proto.MethodFrame) *proto.ProtoError {
 	}
 }
 
-func (ch *Channel) txSelect(m *proto.TxSelect) *proto.ProtoError {
+func (ch *Channel) txSelect(m *proto.TxSelect) *proto.Error {
 	ch.startTxMode()
 	ch.SendMethod(&proto.TxSelectOk{})
 	return nil
 }
 
-func (ch *Channel) txCommit(m *proto.TxCommit) *proto.ProtoError {
+func (ch *Channel) txCommit(m *proto.TxCommit) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 	if err := ch.commitTx(clsID, mtdID); err != nil {
 		return err
@@ -33,7 +33,7 @@ func (ch *Channel) txCommit(m *proto.TxCommit) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) txRollback(m *proto.TxRollback) *proto.ProtoError {
+func (ch *Channel) txRollback(m *proto.TxRollback) *proto.Error {
 	if err := ch.rollbackTx(); err != nil {
 		return err
 	}

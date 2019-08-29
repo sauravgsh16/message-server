@@ -5,7 +5,30 @@ server.go
     3) Check if two DB - server and message are required.
 
 queue.go
-    1) PERSIST LOGIC
+    1) EquivalentQueues
+    2) Len
+    3) ActiveConsumerCount
+    4) Persist
+    5) Depersist
+    6) DepersistBoltTx
+    7) LoadAllQueues
+    8) LoadFromMsgStore
+    9) Close
+    10) Purge
+    11) purgeNotThreadSafe
+    12) Add
+    13) ConsumeImmediate
+    14) Delete
+    15) Readd
+    16) removeConsumer
+    17) autodeleteTimeout
+    18) cancelConsumers
+    19) AddConsumer
+    20) Start
+    21) MaybeReady
+    22) processOne
+    23) GetOneForced
+    24) GetOne
 
 store.go
     2) MessageCount
@@ -13,10 +36,7 @@ store.go
     10) GetNoChecks
     15) GetAndDecrRef
 
-consumer.go
-    1) MessageResourceHolders - done
-    2) ConsumeImmediate - done
-    3) SendCancel - done
+binding.go
 
 Check for RETURN CODES ALL OVER REPO, IMPLEMENT CONSTANTS
 

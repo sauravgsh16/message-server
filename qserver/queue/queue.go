@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/qserver/store"
-
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/consumer"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/qserver/store"
 )
 
 type Queue struct {

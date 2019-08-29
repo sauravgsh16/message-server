@@ -6,6 +6,31 @@ import (
 )
 
 // *********************
+//    ProtocolHeader
+// *********************
+
+func (*ProtocolHeader) MethodIdentifier() (uint16, uint16) {
+	return 0, 0
+}
+
+func (*ProtocolHeader) FrameType() byte {
+	return 1
+}
+
+func (*ProtocolHeader) MethodName() string {
+	return "ProtocolHeader"
+}
+
+func (f *ProtocolHeader) Read(r io.Reader) (err error) {
+	return
+}
+
+func (f *ProtocolHeader) Write(w io.Writer) (err error) {
+	_, err = w.Write([]byte{'S', 'E', 'C', 'O', 'C'})
+	return err
+}
+
+// *********************
 //    CONNECTION SPECS
 // *********************
 

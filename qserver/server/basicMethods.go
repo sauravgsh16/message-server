@@ -2,10 +2,10 @@ package server
 
 import (
 	"github.com/sauravgsh16/secoc-third/allocate"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 )
 
-func (ch *Channel) basicRoute(mf proto.MethodFrame) *proto.ProtoError {
+func (ch *Channel) basicRoute(mf proto.MethodFrame) *proto.Error {
 	switch method := mf.(type) {
 	case *proto.BasicConsume:
 		return ch.basicConsume(method)
@@ -23,7 +23,7 @@ func (ch *Channel) basicRoute(mf proto.MethodFrame) *proto.ProtoError {
 	}
 }
 
-func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.ProtoError {
+func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
 	// Check queue
@@ -54,7 +54,7 @@ func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.ProtoError {
+func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.Error {
 	if err := ch.removeConsumer(m.ConsumerTag); err != nil {
 		clsID, mtdID := m.MethodIdentifier()
 		return proto.NewSoftError(404, err.Error(), clsID, mtdID)
@@ -65,7 +65,7 @@ func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.ProtoError {
+func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.Error {
 	_, found := ch.server.exchanges[m.Exchange]
 	if !found {
 		clsID, mtdID := m.MethodIdentifier()
@@ -76,10 +76,10 @@ func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) basicAck(m *proto.BasicAck) *proto.ProtoError {
+func (ch *Channel) basicAck(m *proto.BasicAck) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) basicNack(m *proto.BasicNack) *proto.ProtoError {
+func (ch *Channel) basicNack(m *proto.BasicNack) *proto.Error {
 	return nil
 }

@@ -8,10 +8,10 @@ import (
 	"io"
 )
 
-func ReadFrame(reader io.Reader) (*WireFrame, error) {
+func ReadFrame(r io.Reader) (*WireFrame, error) {
 
 	incoming := make([]byte, 1+2+4)
-	if err := binary.Read(reader, binary.LittleEndian, incoming); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, incoming); err != nil {
 		return nil, err
 	}
 	f := &WireFrame{}
@@ -28,12 +28,12 @@ func ReadFrame(reader io.Reader) (*WireFrame, error) {
 
 	// Get the variable length payload
 	var length uint32
-	if err := binary.Read(reader, binary.BigEndian, &length); err != nil {
+	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
 		return nil, err
 	}
 
 	var slice = make([]byte, length+1)
-	if err := binary.Read(reader, binary.BigEndian, slice); err != nil {
+	if err := binary.Read(r, binary.BigEndian, slice); err != nil {
 		return nil, errors.New("Bad frame payload " + err.Error())
 	}
 	f.Payload = slice[0:length]

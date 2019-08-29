@@ -1,5 +1,9 @@
 package proto
 
+// PROTOCOL HEADER
+
+type ProtocolHeader struct{}
+
 // ***********************
 //    CONNECTION FRAMES
 // ***********************

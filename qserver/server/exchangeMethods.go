@@ -1,11 +1,11 @@
 package server
 
 import (
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/exchange"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
 )
 
-func (ch *Channel) exchangeRoute(mf proto.MethodFrame) *proto.ProtoError {
+func (ch *Channel) exchangeRoute(mf proto.MethodFrame) *proto.Error {
 	switch method := mf.(type) {
 	case *proto.ExchangeDeclare:
 		return ch.exchangeDeclare(method)
@@ -20,7 +20,7 @@ func (ch *Channel) exchangeRoute(mf proto.MethodFrame) *proto.ProtoError {
 	return proto.NewHardError(540, "Not Implemented", cls, mtd)
 }
 
-func (ch *Channel) exchangeDeclare(m *proto.ExchangeDeclare) *proto.ProtoError {
+func (ch *Channel) exchangeDeclare(m *proto.ExchangeDeclare) *proto.Error {
 
 	ex, protoErr := exchange.NewExchangeFromMethod(m, ch.server.exchangeDeleter)
 	if protoErr != nil {
@@ -50,7 +50,7 @@ func (ch *Channel) exchangeDeclare(m *proto.ExchangeDeclare) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) exchangeDelete(m *proto.ExchangeDelete) *proto.ProtoError {
+func (ch *Channel) exchangeDelete(m *proto.ExchangeDelete) *proto.Error {
 	clsId, mtdId := m.MethodIdentifier()
 	errCode, err := ch.server.deleteExchange(m)
 	if err != nil {
@@ -62,12 +62,12 @@ func (ch *Channel) exchangeDelete(m *proto.ExchangeDelete) *proto.ProtoError {
 	return nil
 }
 
-func (ch *Channel) exchangeBind(m *proto.ExchangeBind) *proto.ProtoError {
+func (ch *Channel) exchangeBind(m *proto.ExchangeBind) *proto.Error {
 	cls, mtd := m.MethodIdentifier()
 	return proto.NewHardError(540, "Not Implemented", cls, mtd)
 }
 
-func (ch *Channel) exchangeUnbind(m *proto.ExchangeUnbind) *proto.ProtoError {
+func (ch *Channel) exchangeUnbind(m *proto.ExchangeUnbind) *proto.Error {
 	cls, mtd := m.MethodIdentifier()
 	return proto.NewHardError(540, "Not Implemented", cls, mtd)
 }

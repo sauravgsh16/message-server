@@ -6,6 +6,11 @@ type WireFrame struct {
 	Payload   []byte
 }
 
+type ChannelFrame struct {
+	ChannelID uint16
+	Method    MethodFrame
+}
+
 type HeaderFrame struct {
 	Class    uint16
 	BodySize uint64

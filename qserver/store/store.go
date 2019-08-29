@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
+	"github.com/sauravgsh16/secoc-third/proto"
 )
 
 var CONTENT_BUCKET = []byte("content")
@@ -64,48 +64,6 @@ func New(filePath string) (*MsgStore, error) {
 
 func (ms *MsgStore) Start() {
 	go ms.handlePeriodicPersists()
-}
-
-func (ms *MsgStore) handlePeriodicPersists() {
-	interval := time.Duration(200 * time.Millisecond)
-	for {
-		time.Sleep(interval)
-		ms.persistDB()
-	}
-}
-
-func (ms *MsgStore) resetOps() {
-	ms.qmToAdd = make(map[Key]*proto.QueueMessage)
-	ms.qmToDelete = make(map[Key]*proto.QueueMessage)
-	ms.qmDelivered = make(map[Key]*proto.QueueMessage)
-}
-
-func (ms *MsgStore) persistDB() {
-	ms.persistMux.Lock()
-	qmToAdd := ms.qmToAdd
-	qmToDelete := ms.qmToDelete
-	qmDelivered := ms.qmDelivered
-	ms.resetOps()
-	ms.persistMux.Unlock()
-
-	toDelete := make([]Key, 0, len(qmToAdd))
-
-	for id, _ := range qmToDelete {
-		if _, ok := qmToAdd[id]; ok {
-			delete(qmToAdd, id)
-			toDelete = append(toDelete, id)
-		}
-		delete(qmDelivered, id)
-	}
-	for _, id := range toDelete {
-		delete(qmToDelete, id)
-	}
-
-	// Update db to persist new changes
-	uf := ms.updateFunc(qmToAdd, qmToDelete, qmDelivered)
-	if err := ms.db.Update(uf); err != nil {
-		panic("Failed to persist data: " + err.Error())
-	}
 }
 
 func (ms *MsgStore) AddMessage(msg *proto.Message, qs []string) (map[string][]*proto.QueueMessage, error) {
@@ -172,14 +130,6 @@ func (ms *MsgStore) GetIndexMessage(id int64) (*proto.IndexMessage, bool) {
 	return im, found
 }
 
-func calcMessageSize(msg *proto.Message) uint32 {
-	size := uint32(0)
-	for _, frame := range msg.Payload {
-		size += uint32(len(frame.Payload))
-	}
-	return size
-}
-
 func (ms *MsgStore) RemoveRef(qm *proto.QueueMessage, queueName string, mrh []proto.MessageResourceHolder) error {
 
 	im, found := ms.GetIndexMessage(qm.ID)
@@ -233,6 +183,56 @@ func (ms *MsgStore) Get(qm *proto.QueueMessage, mrh []proto.MessageResourceHolde
 		rh.ReleaseResources(qm)
 	}
 	return nil, false
+}
+
+func calcMessageSize(msg *proto.Message) uint32 {
+	size := uint32(0)
+	for _, frame := range msg.Payload {
+		size += uint32(len(frame.Payload))
+	}
+	return size
+}
+
+func (ms *MsgStore) handlePeriodicPersists() {
+	interval := time.Duration(200 * time.Millisecond)
+	for {
+		time.Sleep(interval)
+		ms.persistDB()
+	}
+}
+
+func (ms *MsgStore) resetOps() {
+	ms.qmToAdd = make(map[Key]*proto.QueueMessage)
+	ms.qmToDelete = make(map[Key]*proto.QueueMessage)
+	ms.qmDelivered = make(map[Key]*proto.QueueMessage)
+}
+
+func (ms *MsgStore) persistDB() {
+	ms.persistMux.Lock()
+	qmToAdd := ms.qmToAdd
+	qmToDelete := ms.qmToDelete
+	qmDelivered := ms.qmDelivered
+	ms.resetOps()
+	ms.persistMux.Unlock()
+
+	toDelete := make([]Key, 0, len(qmToAdd))
+
+	for id, _ := range qmToDelete {
+		if _, ok := qmToAdd[id]; ok {
+			delete(qmToAdd, id)
+			toDelete = append(toDelete, id)
+		}
+		delete(qmDelivered, id)
+	}
+	for _, id := range toDelete {
+		delete(qmToDelete, id)
+	}
+
+	// Update db to persist new changes
+	uf := ms.updateFunc(qmToAdd, qmToDelete, qmDelivered)
+	if err := ms.db.Update(uf); err != nil {
+		panic("Failed to persist data: " + err.Error())
+	}
 }
 
 func (ms *MsgStore) updateFunc(qmToAdd, qmToDelete, qmDelivered map[Key]*proto.QueueMessage) func(tx *bolt.Tx) error {

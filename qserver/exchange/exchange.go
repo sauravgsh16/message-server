@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/binding"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
 )
 
 const (
@@ -19,7 +19,7 @@ type Exchange struct {
 	ExType     uint8
 	bindings   []*binding.Binding
 	bindLock   sync.Mutex
-	incoming   chan proto.Frame
+	incoming   chan proto.Frame // REDUNDANT ********************************
 	Closed     bool
 	deleteChan chan *Exchange
 }
@@ -36,7 +36,7 @@ func NewExchange(name string, extype uint8, deleteChan chan *Exchange) *Exchange
 
 // NEED TO CHECK - RABBITMQ DOC
 // GETS CALLED FROM exchangeDeclare
-func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (*Exchange, *proto.ProtoError) {
+func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (*Exchange, *proto.Error) {
 	extype, err := exchangeNameToType(m.Type)
 	if err != nil {
 		var classId, methodId = m.MethodIdentifier()
@@ -105,7 +105,7 @@ func (ex *Exchange) RemoveQueueBindings(qname string) {
 	ex.bindings = bindings
 }
 
-func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.ProtoError) {
+func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.Error) {
 	clsID, mtdID := msg.Method.MethodIdentifier()
 	queues := make([]string, 0)
 	if ex.Name != msg.Method.Exchange {

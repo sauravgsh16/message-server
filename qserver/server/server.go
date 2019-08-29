@@ -7,8 +7,8 @@ import (
 
 	"github.com/boltdb/bolt"
 
+	"github.com/sauravgsh16/secoc-third/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/exchange"
-	"github.com/sauravgsh16/secoc-third/qserver/proto"
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
 	"github.com/sauravgsh16/secoc-third/qserver/store"
 )
@@ -193,7 +193,7 @@ func (s *Server) basicReturnMsg(msg *proto.Message, code uint16, text string) *p
 	}
 }
 
-func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.BasicReturn, *proto.ProtoError) {
+func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.BasicReturn, *proto.Error) {
 	if ex.Closed {
 		return s.basicReturnMsg(msg, 313, "Exchange closed, unable to route message"), nil // AGAIN CHECK FOR RETURN CODE - IMPLEMENT CONSTANT
 	}
@@ -215,27 +215,40 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 		return nil, proto.NewSoftError(500, errObj.Error(), clsID, mtdID)
 	}
 
-	// TODO:
-	// CHECK IF IMMEDIATE CONSUMPTION OF QUEUE IS REQUIRED
-
 	if msg.Method.Immediate {
-		for _, queueName := range queues {
-			qms := mapQueueWithQueueMessages[queueName]
-			for _, qm := range qms {
-				queue, found := s.queues[queueName]
-				if !found {
-					// Queue could have been deleted
-					continue
-				}
-				msgConsumed := queue.ConsumeImmediate(qm)
-				// BIG CHECK --
-				// HANDLING MESSAGE
-				//
+		return s.consumeMsgImmediate(msg, queues, mapQueueWithQueueMessages)
+	}
+	s.addMsgForConsumption(msg, queues, mapQueueWithQueueMessages)
+	return nil, nil
+}
+
+func (s *Server) consumeMsgImmediate(msg *proto.Message, queues []string, qmMap map[string][]*proto.QueueMessage) (*proto.BasicReturn, *proto.Error) {
+	consumed := false
+	for _, queueName := range queues {
+		qms := qmMap[queueName]
+		for _, qm := range qms {
+			queue, found := s.queues[queueName]
+			if !found {
+				// Queue could have been deleted
+				continue
 			}
+			msgConsumed := queue.ConsumeImmediate(qm)
+			mrh := make([]proto.MessageResourceHolder, 0)
+			if !msgConsumed {
+				s.msgStore.RemoveRef(qm, queueName, mrh)
+			}
+			consumed = consumed || msgConsumed
 		}
 	}
+	if !consumed {
+		return s.basicReturnMsg(msg, 313, "No consumers available"), nil
+	}
+	return nil, nil
+}
+
+func (s *Server) addMsgForConsumption(msg *proto.Message, queues []string, qmMap map[string][]*proto.QueueMessage) {
 	for _, queueName := range queues {
-		qMsgs := mapQueueWithQueueMessages[queueName]
+		qMsgs := qmMap[queueName]
 		for _, qm := range qMsgs {
 			q, found := s.queues[queueName]
 			if !found || !q.Add(qm) {
@@ -246,5 +259,4 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 			}
 		}
 	}
-	return nil, nil
 }
