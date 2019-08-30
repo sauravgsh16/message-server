@@ -136,16 +136,17 @@ func (ch *Channel) start() {
 			}
 			var err *proto.Error
 			frame := <-ch.incoming
-			switch {
-			case frame.FrameType == uint8(proto.FrameMethod):
+
+			switch frame.FrameType {
+			case uint8(proto.FrameMethod):
 				fmt.Println("routing method") // LOGS
 				err = ch.routeMethod(frame)
-			case frame.FrameType == uint8(proto.FrameHeader):
+			case uint8(proto.FrameHeader):
 				if ch.state != CH_CLOSING {
 					fmt.Println("handling header") // LOGS
 					err = ch.handleHeader(frame)
 				}
-			case frame.FrameType == uint8(proto.FrameBody):
+			case uint8(proto.FrameBody):
 				if ch.state != CH_CLOSING {
 					fmt.Println("handling body") // LOGS
 					err = ch.handleBody(frame)

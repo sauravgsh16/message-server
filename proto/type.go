@@ -14,6 +14,7 @@ type MethodFrame interface {
 	Read(r io.Reader) (err error)
 	Write(w io.Writer) (err error)
 	FrameType() byte
+	Wait() bool
 }
 
 type MessageResourceHolder interface {

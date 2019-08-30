@@ -21,13 +21,17 @@ func (*ProtocolHeader) MethodName() string {
 	return "ProtocolHeader"
 }
 
-func (f *ProtocolHeader) Read(r io.Reader) (err error) {
+func (*ProtocolHeader) Read(r io.Reader) (err error) {
 	return
 }
 
-func (f *ProtocolHeader) Write(w io.Writer) (err error) {
+func (*ProtocolHeader) Write(w io.Writer) (err error) {
 	_, err = w.Write([]byte{'S', 'E', 'C', 'O', 'C'})
 	return err
+}
+
+func (*ProtocolHeader) Wait() bool {
+	return false
 }
 
 // *********************
@@ -46,6 +50,10 @@ func (f *ConnectionStart) FrameType() byte {
 
 func (f *ConnectionStart) MethodName() string {
 	return "ConnectionStart"
+}
+
+func (f *ConnectionStart) Wait() bool {
+	return true
 }
 
 func (f *ConnectionStart) Read(r io.Reader) (err error) {
@@ -93,6 +101,10 @@ func (f *ConnectionStartOk) MethodName() string {
 	return "ConnectionStartOk"
 }
 
+func (f *ConnectionStartOk) Wait() bool {
+	return true
+}
+
 func (f *ConnectionStartOk) Read(r io.Reader) (err error) {
 	f.Mechanism, err = ReadShortStr(r)
 	if err != nil {
@@ -136,6 +148,10 @@ func (f *ConnectionOpen) MethodName() string {
 	return "ConnectionOpen"
 }
 
+func (f *ConnectionOpen) Wait() bool {
+	return true
+}
+
 func (f *ConnectionOpen) Read(r io.Reader) (err error) {
 	f.Host, err = ReadShortStr(r)
 	if err != nil {
@@ -167,6 +183,10 @@ func (f *ConnectionOpenOk) FrameType() byte {
 
 func (f *ConnectionOpenOk) MethodName() string {
 	return "ConnectionOpenOk"
+}
+
+func (f *ConnectionOpenOk) Wait() bool {
+	return true
 }
 
 func (f *ConnectionOpenOk) Read(r io.Reader) (err error) {
@@ -201,6 +221,10 @@ func (f *ConnectionClose) FrameType() byte {
 
 func (f *ConnectionClose) MethodName() string {
 	return "ConnectionClose"
+}
+
+func (f *ConnectionClose) Wait() bool {
+	return true
 }
 
 func (f *ConnectionClose) Read(r io.Reader) (err error) {
@@ -264,6 +288,10 @@ func (f *ConnectionCloseOk) MethodName() string {
 	return "ConnectionCloseOk"
 }
 
+func (f *ConnectionCloseOk) Wait() bool {
+	return true
+}
+
 func (f *ConnectionCloseOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -291,6 +319,10 @@ func (f *ChannelOpen) MethodName() string {
 
 func (f *ChannelOpen) FrameType() byte {
 	return 1
+}
+
+func (f *ChannelOpen) Wait() bool {
+	return true
 }
 
 func (f *ChannelOpen) Read(r io.Reader) (err error) {
@@ -327,6 +359,10 @@ func (f *ChannelOpenOk) FrameType() byte {
 	return 1
 }
 
+func (f *ChannelOpenOk) Wait() bool {
+	return true
+}
+
 func (f *ChannelOpenOk) Read(r io.Reader) (err error) {
 	f.Response, err = ReadLongStr(r)
 	if err != nil {
@@ -359,6 +395,10 @@ func (f *ChannelFlow) MethodName() string {
 
 func (f *ChannelFlow) FrameType() byte {
 	return 1
+}
+
+func (f *ChannelFlow) Wait() bool {
+	return true
 }
 
 func (f *ChannelFlow) Read(r io.Reader) (err error) {
@@ -400,6 +440,10 @@ func (f *ChannelFlowOk) FrameType() byte {
 	return 1
 }
 
+func (f *ChannelFlowOk) Wait() bool {
+	return false
+}
+
 func (f *ChannelFlowOk) Read(r io.Reader) (err error) {
 	bits, err := ReadOctet(r)
 	if err != nil {
@@ -437,6 +481,10 @@ func (f *ChannelClose) MethodName() string {
 
 func (f *ChannelClose) FrameType() byte {
 	return 1
+}
+
+func (f *ChannelClose) Wait() bool {
+	return true
 }
 
 func (f *ChannelClose) Read(r io.Reader) (err error) {
@@ -500,6 +548,10 @@ func (f *ChannelCloseOk) FrameType() byte {
 	return 1
 }
 
+func (f *ChannelCloseOk) Wait() bool {
+	return true
+}
+
 func (f *ChannelCloseOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -528,6 +580,10 @@ func (f *ExchangeDeclare) MethodName() string {
 
 func (f *ExchangeDeclare) FrameType() byte {
 	return 1
+}
+
+func (f *ExchangeDeclare) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *ExchangeDeclare) Read(r io.Reader) (err error) {
@@ -590,6 +646,10 @@ func (f *ExchangeDeclareOk) FrameType() byte {
 	return 1
 }
 
+func (f *ExchangeDeclareOk) Wait() bool {
+	return true
+}
+
 func (f *ExchangeDeclareOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -614,6 +674,10 @@ func (f *ExchangeDelete) MethodName() string {
 
 func (f *ExchangeDelete) FrameType() byte {
 	return 1
+}
+
+func (f *ExchangeDelete) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *ExchangeDelete) Read(r io.Reader) (err error) {
@@ -673,6 +737,10 @@ func (f *ExchangeDeleteOk) FrameType() byte {
 	return 1
 }
 
+func (f *ExchangeDeleteOk) Wait() bool {
+	return true
+}
+
 func (f *ExchangeDeleteOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -697,6 +765,10 @@ func (f *ExchangeBind) MethodName() string {
 
 func (f *ExchangeBind) FrameType() byte {
 	return 1
+}
+
+func (f *ExchangeBind) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *ExchangeBind) Read(r io.Reader) (err error) {
@@ -769,6 +841,10 @@ func (f *ExchangeBindOk) FrameType() byte {
 	return 1
 }
 
+func (f *ExchangeBindOk) Wait() bool {
+	return true
+}
+
 func (f *ExchangeBindOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -793,6 +869,10 @@ func (f *ExchangeUnbind) MethodName() string {
 
 func (f *ExchangeUnbind) FrameType() byte {
 	return 1
+}
+
+func (f *ExchangeUnbind) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *ExchangeUnbind) Read(r io.Reader) (err error) {
@@ -865,6 +945,10 @@ func (f *ExchangeUnbindOk) FrameType() byte {
 	return 1
 }
 
+func (f *ExchangeUnbindOk) Wait() bool {
+	return true
+}
+
 func (f *ExchangeUnbindOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -901,6 +985,10 @@ func (f *QueueDeclare) MethodName() string {
 
 func (f *QueueDeclare) FrameType() byte {
 	return 1
+}
+
+func (f *QueueDeclare) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *QueueDeclare) Read(r io.Reader) (err error) {
@@ -952,6 +1040,9 @@ func (f *QueueDeclareOk) MethodName() string {
 
 func (f *QueueDeclareOk) FrameType() byte {
 	return 1
+}
+func (f *QueueDeclareOk) Wait() bool {
+	return true
 }
 
 func (f *QueueDeclareOk) Read(r io.Reader) (err error) {
@@ -1006,6 +1097,10 @@ func (f *QueueBind) MethodName() string {
 
 func (f *QueueBind) FrameType() byte {
 	return 1
+}
+
+func (f *QueueBind) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *QueueBind) Read(r io.Reader) (err error) {
@@ -1077,6 +1172,10 @@ func (f *QueueBindOk) FrameType() byte {
 	return 1
 }
 
+func (f *QueueBindOk) Wait() bool {
+	return true
+}
+
 func (f *QueueBindOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -1101,6 +1200,10 @@ func (f *QueueUnbind) MethodName() string {
 
 func (f *QueueUnbind) FrameType() byte {
 	return 1
+}
+
+func (f *QueueUnbind) Wait() bool {
+	return true
 }
 
 func (f *QueueUnbind) Read(r io.Reader) (err error) {
@@ -1156,6 +1259,10 @@ func (f *QueueUnbindOk) FrameType() byte {
 	return 1
 }
 
+func (f *QueueUnbindOk) Wait() bool {
+	return true
+}
+
 func (f *QueueUnbindOk) Read(r io.Reader) (err error) {
 	return
 }
@@ -1180,6 +1287,10 @@ func (f *QueueDelete) MethodName() string {
 
 func (f *QueueDelete) FrameType() byte {
 	return 1
+}
+
+func (f *QueueDelete) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *QueueDelete) Read(r io.Reader) (err error) {
@@ -1240,6 +1351,10 @@ func (f *QueueDeleteOk) FrameType() byte {
 	return 1
 }
 
+func (f *QueueDeleteOk) Wait() bool {
+	return true
+}
+
 func (f *QueueDeleteOk) Read(r io.Reader) (err error) {
 	f.MessageCnt, err = ReadLong(r)
 	if err != nil {
@@ -1286,6 +1401,10 @@ func (f *BasicConsume) MethodName() string {
 
 func (f *BasicConsume) FrameType() byte {
 	return 1
+}
+
+func (f *BasicConsume) Wait() bool {
+	return true && !f.NoWait
 }
 
 func (f *BasicConsume) Read(r io.Reader) (err error) {
@@ -1353,6 +1472,10 @@ func (f *BasicConsumeOk) FrameType() byte {
 	return 1
 }
 
+func (f *BasicConsumeOk) Wait() bool {
+	return true
+}
+
 func (f *BasicConsumeOk) Read(r io.Reader) (err error) {
 	f.ConsumerTag, err = ReadLongStr(r)
 	if err != nil {
@@ -1385,6 +1508,10 @@ func (f *BasicCancel) MethodName() string {
 
 func (f *BasicCancel) FrameType() byte {
 	return 1
+}
+
+func (f *BasicCancel) Wait() bool {
+	return true
 }
 
 func (f *BasicCancel) Read(r io.Reader) (err error) {
@@ -1437,6 +1564,10 @@ func (f *BasicCancelOk) FrameType() byte {
 	return 1
 }
 
+func (f *BasicCancelOk) Wait() bool {
+	return true
+}
+
 func (f *BasicCancelOk) Read(r io.Reader) (err error) {
 	f.ConsumerTag, err = ReadLongStr(r)
 	if err != nil {
@@ -1469,6 +1600,10 @@ func (f *BasicPublish) MethodName() string {
 
 func (f *BasicPublish) FrameType() byte {
 	return 1
+}
+
+func (f *BasicPublish) Wait() bool {
+	return false
 }
 
 func (f *BasicPublish) Read(r io.Reader) (err error) {
@@ -1532,6 +1667,10 @@ func (f *BasicReturn) FrameType() byte {
 	return 1
 }
 
+func (f *BasicReturn) Wait() bool {
+	return false
+}
+
 func (f *BasicReturn) Read(r io.Reader) (err error) {
 	f.ReplyCode, err = ReadShort(r)
 	if err != nil {
@@ -1591,6 +1730,10 @@ func (f *BasicDeliver) MethodName() string {
 
 func (f *BasicDeliver) FrameType() byte {
 	return 1
+}
+
+func (f *BasicDeliver) Wait() bool {
+	return false
 }
 
 func (f *BasicDeliver) Read(r io.Reader) (err error) {
@@ -1655,6 +1798,10 @@ func (f *BasicAck) FrameType() byte {
 	return 1
 }
 
+func (f *BasicAck) Wait() bool {
+	return false
+}
+
 func (f *BasicAck) Read(r io.Reader) (err error) {
 	f.DeliveryTag, err = ReadLongLong(r)
 	if err != nil {
@@ -1703,6 +1850,10 @@ func (f *BasicNack) MethodName() string {
 
 func (f *BasicNack) FrameType() byte {
 	return 1
+}
+
+func (f *BasicNack) Wait() bool {
+	return false
 }
 
 func (f *BasicNack) Read(r io.Reader) (err error) {
@@ -1771,6 +1922,10 @@ func (f *TxSelect) FrameType() byte {
 	return 1
 }
 
+func (f *TxSelect) Wait() bool {
+	return true
+}
+
 func (f *TxSelect) Read(r io.Reader) (err error) {
 	return
 }
@@ -1794,6 +1949,10 @@ func (f *TxSelectOk) MethodName() string {
 
 func (f *TxSelectOk) FrameType() byte {
 	return 1
+}
+
+func (f *TxSelectOk) Wait() bool {
+	return true
 }
 
 func (f *TxSelectOk) Read(r io.Reader) (err error) {
@@ -1821,6 +1980,10 @@ func (f *TxCommit) FrameType() byte {
 	return 1
 }
 
+func (f *TxCommit) Wait() bool {
+	return true
+}
+
 func (f *TxCommit) Read(r io.Reader) (err error) {
 	return
 }
@@ -1844,6 +2007,10 @@ func (f *TxCommitOk) MethodName() string {
 
 func (f *TxCommitOk) FrameType() byte {
 	return 1
+}
+
+func (f *TxCommitOk) Wait() bool {
+	return true
 }
 
 func (f *TxCommitOk) Read(r io.Reader) (err error) {
@@ -1871,6 +2038,10 @@ func (f *TxRollback) FrameType() byte {
 	return 1
 }
 
+func (f *TxRollback) Wait() bool {
+	return true
+}
+
 func (f *TxRollback) Read(r io.Reader) (err error) {
 	return
 }
@@ -1894,6 +2065,10 @@ func (f *TxRollbackOk) MethodName() string {
 
 func (f *TxRollbackOk) FrameType() byte {
 	return 1
+}
+
+func (f *TxRollbackOk) Wait() bool {
+	return true
 }
 
 func (f *TxRollbackOk) Read(r io.Reader) (err error) {

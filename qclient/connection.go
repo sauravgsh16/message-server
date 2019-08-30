@@ -279,7 +279,7 @@ func (c *Connection) dispatchN(wf *proto.WireFrame) {
 	c.mux.Unlock()
 
 	if ch != nil {
-		ch.recv(ch, wf)
+		ch.incoming <- wf
 	} else {
 		// We expect the method here to be ChannelClose, or ChannelCloseOk
 		c.routeMethod(wf)
@@ -356,7 +356,7 @@ func (c *Connection) openChannel() (*Channel, error) {
 	}
 
 	if err := ch.open(); err != nil {
-		c.releaseChannel(ch.ID)
+		c.releaseChannel(ch.id)
 		return nil, err
 	}
 	return ch, nil
