@@ -19,7 +19,6 @@ const defaultConnTimeout = 30 * time.Second
 
 var (
 	ErrMaxChannel     = errors.New("max number of channels allocated")
-	ErrClosed         = errors.New("Send attempt on closed connection")
 	ErrInvalidCommand = errors.New("Invalid command received")
 	ErrGetHostName    = errors.New("Unable to retrieve Host Name")
 	ErrHost           = errors.New("Corrupt HostName")
@@ -40,7 +39,7 @@ type Connection struct {
 	sendMux    sync.Mutex
 	mux        sync.Mutex
 	conn       io.ReadWriteCloser
-	channels   map[int]*Channel
+	channels   map[uint16]*Channel
 	outgoing   chan *proto.WireFrame
 	incoming   chan *proto.MethodFrame
 	status     ConnectionStatus
@@ -78,12 +77,12 @@ func dialer(netType, addr string, timeout time.Duration) (net.Conn, error) {
 
 func Open(conn io.ReadWriteCloser) (*Connection, error) {
 	c := &Connection{
-		conn:      conn,
-		channels:  make(map[int]*Channel),
-		outgoing:  make(chan *proto.WireFrame, 100),
-		incoming:  make(chan *proto.MethodFrame),
-		allocator: allocate.NewAllocator(),
-		status:    ConnectionStatus{},
+		conn:     conn,
+		channels: make(map[uint16]*Channel),
+		outgoing: make(chan *proto.WireFrame, 100),
+		incoming: make(chan *proto.MethodFrame),
+		errors:   make(chan *proto.Error, 1),
+		status:   ConnectionStatus{},
 	}
 	c.handleOutgoing()
 	go c.handleIncoming()
@@ -108,7 +107,7 @@ func (c *Connection) send(cf *proto.ChannelFrame) error {
 	c.sendMux.Unlock()
 
 	if err != nil {
-		go c.hardClose()
+		go c.hardClose(err)
 	}
 	c.outgoing <- &proto.WireFrame{
 		FrameType: uint8(proto.FrameMethod),
@@ -189,7 +188,45 @@ func (c *Connection) openHost() error {
 	if err := c.call(req, res); err != nil {
 		return ErrHost
 	}
+	c.allocator = allocate.NewAllocator()
 	return nil
+}
+
+func (c *Connection) hardClose(err error) {
+	c.status.closing = true
+
+	c.destructor.Do(func() {
+		c.mux.Lock()
+		defer c.mux.Unlock()
+
+		if err != nil {
+			c.errors <- err.(*proto.Error)
+		}
+		close(c.errors)
+
+		for _, ch := range c.channels {
+			ch.shutdown(err)
+		}
+
+		c.conn.Close()
+
+		c.channels = map[uint16]*Channel{}
+		c.allocator = allocate.NewAllocator()
+	})
+}
+
+func (c *Connection) closeWith(err *proto.Error) {
+	if c.IsClosed() {
+		return
+	}
+	defer c.hardClose(err)
+
+	c.call(&proto.ConnectionClose{
+		ReplyCode: err.Code,
+		ReplyText: err.Msg,
+		ClassId:   err.Class,
+		MethodId:  err.Method,
+	}, &proto.ConnectionCloseOk{})
 }
 
 func (c *Connection) handleIncoming() {
@@ -200,7 +237,7 @@ func (c *Connection) handleIncoming() {
 		frame, err := proto.ReadFrame(c.conn)
 		if err != nil {
 			fmt.Printf("Error reading frame: %s", err.Error())
-			c.hardClose()
+			c.hardClose(err)
 			break
 		}
 		c.handleFrame(frame)
@@ -219,12 +256,112 @@ func (c *Connection) handleOutgoing() {
 	}()
 }
 
-func (c *Connection) Channel() (*Channel, error) {
+func (c *Connection) handleFrame(wf *proto.WireFrame) {
+	if wf.Channel == 0 {
+		c.dispatch0(wf)
+	} else {
+		c.dispatchN(wf)
+	}
+}
+
+func (c *Connection) dispatch0(wf *proto.WireFrame) {
+	switch {
+	case wf.FrameType == uint8(proto.FrameMethod):
+		c.routeMethod(wf)
+	default:
+		c.closeWith(ErrUnexpectedFrame)
+	}
+}
+
+func (c *Connection) dispatchN(wf *proto.WireFrame) {
+	c.mux.Lock()
+	ch := c.channels[wf.Channel]
+	c.mux.Unlock()
+
+	if ch != nil {
+		ch.recv(ch, wf)
+	} else {
+		// We expect the method here to be ChannelClose, or ChannelCloseOk
+		c.routeMethod(wf)
+	}
+}
+
+func (c *Connection) routeMethod(wf *proto.WireFrame) *proto.Error {
+	r := bytes.NewReader(wf.Payload)
+
+	mf, err := proto.ReadMethod(r)
+	if err != nil {
+		return proto.NewHardError(500, err.Error(), 0, 0)
+	}
+
+	clsID, mtdID := mf.MethodIdentifier()
+	switch clsID {
+	case 10:
+		switch mtdID {
+		case 30:
+			c.send(&proto.ChannelFrame{
+				ChannelID: uint16(0),
+				Method:    &proto.ConnectionCloseOk{},
+			})
+		default:
+			c.incoming <- &mf
+		}
+	case 20:
+		switch mtdID {
+		case 30:
+			c.send(&proto.ChannelFrame{
+				ChannelID: uint16(wf.Channel),
+				Method:    &proto.ChannelCloseOk{},
+			})
+		case 31:
+			// Case ChannelCloseOk, since channel already closed, we ignore.
+		default:
+			// Unexpected method
+			err := proto.NewHardError(504, "Communication attempt on close Channel/Connection", clsID, mtdID)
+			c.closeWith(err)
+		}
+	}
+	return nil
+}
+
+func (c *Connection) allocateChannel() (*Channel, error) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if c.IsClosed() {
+		return nil, ErrClosed
+	}
+
 	id, ok := c.allocator.Next()
 	if !ok {
 		return nil, ErrMaxChannel
 	}
+
 	ch := newChannel(c, uint16(id))
-	c.channels[id] = ch
+	c.channels[uint16(id)] = ch
 	return ch, nil
+}
+
+func (c *Connection) releaseChannel(id uint16) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	delete(c.channels, id)
+}
+
+func (c *Connection) openChannel() (*Channel, error) {
+	ch, err := c.allocateChannel()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ch.open(); err != nil {
+		c.releaseChannel(ch.ID)
+		return nil, err
+	}
+	return ch, nil
+}
+
+func (c *Connection) Channel() (*Channel, error) {
+	return c.openChannel()
 }

@@ -20,8 +20,10 @@ func (ch *Channel) connectionRoute(conn *Connection, mf proto.MethodFrame) *prot
 }
 
 func (ch *Channel) connectionOpen(c *Connection, m *proto.ConnectionOpen) *proto.Error {
+	// TODO : check if m.Host is accessible.
+	// If not, then close connection - break
 	c.status.open = true
-	ch.SendMethod(&proto.ConnectionOpenOk{Response: ""})
+	ch.SendMethod(&proto.ConnectionOpenOk{Response: "Connected"})
 	c.status.openOk = true
 	return nil
 }
@@ -32,7 +34,6 @@ func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) 
 	if m.Mechanism != "PLAIN" {
 		c.hardClose()
 	}
-
 	return nil
 }
 

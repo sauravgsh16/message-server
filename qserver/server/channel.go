@@ -301,14 +301,14 @@ func (ch *Channel) startPublish(m *proto.BasicPublish) {
 }
 
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.Error {
-	var methodReader = bytes.NewReader(frame.Payload)
+	reader := bytes.NewReader(frame.Payload)
 
-	var methodFrame, err = proto.ReadMethod(methodReader)
+	methodFrame, err := proto.ReadMethod(reader)
 	if err != nil {
 		return proto.NewHardError(500, err.Error(), 0, 0)
 	}
 
-	var classID, methodID = methodFrame.MethodIdentifier()
+	classID, methodID := methodFrame.MethodIdentifier()
 
 	// Check if channel is in initial creation state
 	if ch.state == CH_INIT && (classID != 20 || methodID != 10) {
