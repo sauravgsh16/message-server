@@ -304,38 +304,38 @@ func (ch *Channel) startPublish(m *proto.BasicPublish) {
 func (ch *Channel) routeMethod(frame *proto.WireFrame) *proto.Error {
 	reader := bytes.NewReader(frame.Payload)
 
-	methodFrame, err := proto.ReadMethod(reader)
+	mf, err := proto.ReadMethod(reader)
 	if err != nil {
 		return proto.NewHardError(500, err.Error(), 0, 0)
 	}
 
-	classID, methodID := methodFrame.MethodIdentifier()
+	clsID, mtdID := mf.MethodIdentifier()
 
 	// Check if channel is in initial creation state
-	if ch.state == CH_INIT && (classID != 20 || methodID != 10) {
-		return proto.NewHardError(503, "Open method call on non-open channel", classID, methodID)
+	if ch.state == CH_INIT && (clsID != 20 || mtdID != 10) {
+		return proto.NewHardError(503, "Open method call on non-open channel", clsID, mtdID)
 	}
 
-	// Route methodFrame based on classID
-	switch {
-	case classID == 10:
-		return ch.connectionRoute(ch.conn, methodFrame)
-	case classID == 20:
-		return ch.channelRoute(methodFrame)
-	case classID == 30:
-		return ch.exchangeRoute(methodFrame)
-	case classID == 40:
-		return ch.queueRoute(methodFrame)
-	case classID == 50:
-		return ch.basicRoute(methodFrame)
-	case classID == 60:
-		return ch.txRoute(methodFrame)
+	// Route methodFrame based on clsID
+	switch clsID {
+	case 10:
+		return ch.connectionRoute(ch.conn, mf)
+	case 20:
+		return ch.channelRoute(mf)
+	case 30:
+		return ch.exchangeRoute(mf)
+	case 40:
+		return ch.queueRoute(mf)
+	case 50:
+		return ch.basicRoute(mf)
+	case 60:
+		return ch.txRoute(mf)
 	default:
-		return proto.NewHardError(540, "Not Implemented", classID, methodID)
+		return proto.NewHardError(540, "Not Implemented", clsID, mtdID)
 	}
 }
 
-func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.Error {
+func (ch *Channel) handleHeader(wf *proto.WireFrame) *proto.Error {
 
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)
@@ -345,10 +345,10 @@ func (ch *Channel) handleHeader(frame *proto.WireFrame) *proto.Error {
 		return proto.NewSoftError(500, "unexpected - header already seen", 0, 0)
 	}
 
-	var header = &proto.HeaderFrame{}
-	var buf = bytes.NewReader(frame.Payload)
-	var err = header.Read(buf)
-	if err != nil {
+	header := &proto.HeaderFrame{}
+	buf := bytes.NewReader(wf.Payload)
+
+	if err := header.Read(buf); err != nil {
 		return proto.NewHardError(500, "Error parsing header frame: "+err.Error(), 0, 0)
 	}
 	ch.currentMessage.Header = header

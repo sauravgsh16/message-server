@@ -6,14 +6,19 @@ import (
 
 func (ch *Channel) connectionRoute(conn *Connection, mf proto.MethodFrame) *proto.Error {
 	switch method := mf.(type) {
+
 	case *proto.ConnectionStartOk:
 		return ch.connectionStartOk(conn, method)
+
 	case *proto.ConnectionOpen:
 		return ch.connectionOpen(conn, method)
+
 	case *proto.ConnectionClose:
 		return ch.connectionClose(conn, method)
+
 	case *proto.ConnectionCloseOk:
 		return ch.connectionCloseOk(conn, method)
+
 	}
 	classId, methodId := mf.MethodIdentifier()
 	return proto.NewHardError(540, "unable to route frame", classId, methodId)

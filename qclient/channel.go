@@ -1,7 +1,7 @@
 package qclient
 
 import (
-	"reflect"
+	"bytes"
 	"sync"
 
 	"github.com/sauravgsh16/secoc-third/proto"
@@ -38,40 +38,68 @@ func newChannel(c *Connection, id uint16) *Channel {
 	}
 }
 
-func (ch *Channel) send() error {
+func (ch *Channel) sendMethod(mf proto.MethodFrame) error {
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
 
-}
-
-func (ch *Channel) call(req proto.MethodFrame, resps ...proto.MethodFrame) error {
-	if err := ch.send(); err != nil {
+	if err := ch.conn.send(&proto.ChannelFrame{
+		ChannelID: ch.id,
+		Method:    mf,
+	}); err != nil {
 		return err
-	}
-
-	if req.Wait() {
-		select {
-		case e, ok := <-ch.errors:
-			if ok {
-				return e
-			}
-			return ErrClosed
-		case msg := <-ch.incoming:
-			for _, res := range resps {
-				if reflect.TypeOf(msg) == reflect.TypeOf(res) {
-					vres := reflect.ValueOf(res).Elem()
-					vmsg := reflect.ValueOf(msg).Elem()
-					vres.Set(vmsg)
-					return nil
-				}
-			}
-			return ErrInvalidCommand
-		}
 	}
 	return nil
 }
 
+func (ch *Channel) sendContent(msg *proto.Message, mf proto.MethodFrame) error {
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	buf := bytes.NewBuffer(make([]byte, 0))
+
+	// Write Headers
+	proto.WriteShort(buf, msg.Header.Class)
+	proto.WriteLongLong(buf, msg.Header.BodySize)
+
+	// Send method
+	if err := ch.sendMethod(mf); err != nil {
+		return err
+	}
+
+	// Send Header
+	ch.outgoing <- &proto.WireFrame{
+		FrameType: uint8(proto.FrameHeader),
+		Channel:   ch.id,
+		Payload:   buf.Bytes(),
+	}
+
+	// Send Body
+	for _, body := range msg.Payload {
+		body.Channel = ch.id
+		ch.outgoing <- body
+	}
+	return nil
+}
+
+func (ch *Channel) sendError(err *proto.Error) {
+	if err.Soft {
+		ch.sendMethod(&proto.ChannelClose{
+			ReplyCode: err.Code,
+			ReplyText: err.Msg,
+			ClassId:   err.Class,
+			MethodId:  err.Method,
+		})
+	} else {
+		ch.conn.closeWithErr(err)
+	}
+}
+
 func (ch *Channel) open() error {
 	ch.startReceiver()
-	return ch.openChannel()
+	if err := ch.sendMethod(&proto.ChannelOpen{}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ch *Channel) startReceiver() {
@@ -88,7 +116,7 @@ func (ch *Channel) startReceiver() {
 
 			switch frame.FrameType {
 			case uint8(proto.FrameMethod):
-				err = ch.routeMethod(frame)
+				err = ch.dispatchMethod(frame)
 			case uint8(proto.FrameHeader):
 				if ch.state != CH_CLOSING {
 					err = ch.handleHeader(frame)
@@ -108,6 +136,32 @@ func (ch *Channel) startReceiver() {
 	}()
 }
 
-func (ch *Channel) openChannel() error {
-	return ch.call(&proto.ChannelOpen{}, &proto.ChannelOpenOk{})
+func (ch *Channel) dispatchMethod(wf *proto.WireFrame) *proto.Error {
+	reader := bytes.NewReader(wf.Payload)
+
+	mf, err := proto.ReadMethod(reader)
+	if err != nil {
+		return proto.NewHardError(500, err.Error(), 0, 0)
+	}
+
+	clsID, mtdID := mf.MethodIdentifier()
+
+	switch clsID {
+	case 10:
+		return ch.connectionRoute(mf)
+	case 20:
+		return ch.channelRoute(mf)
+	case 30:
+		return ch.exchangeRoute(mf)
+	case 40:
+		return ch.queueRoute(mf)
+	case 50:
+		return ch.basicRoute(mf)
+	default:
+		return proto.NewHardError(500, "Unexpected method frame", clsID, mtdID)
+	}
+}
+
+func (ch *Channel) handleHeader() *proto.Error {
+
 }

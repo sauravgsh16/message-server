@@ -215,7 +215,7 @@ func (c *Connection) hardClose(err error) {
 	})
 }
 
-func (c *Connection) closeWith(err *proto.Error) {
+func (c *Connection) closeWithErr(err *proto.Error) {
 	if c.IsClosed() {
 		return
 	}
@@ -269,7 +269,7 @@ func (c *Connection) dispatch0(wf *proto.WireFrame) {
 	case wf.FrameType == uint8(proto.FrameMethod):
 		c.routeMethod(wf)
 	default:
-		c.closeWith(ErrUnexpectedFrame)
+		c.closeWithErr(ErrUnexpectedFrame)
 	}
 }
 
@@ -318,7 +318,7 @@ func (c *Connection) routeMethod(wf *proto.WireFrame) *proto.Error {
 		default:
 			// Unexpected method
 			err := proto.NewHardError(504, "Communication attempt on close Channel/Connection", clsID, mtdID)
-			c.closeWith(err)
+			c.closeWithErr(err)
 		}
 	}
 	return nil
