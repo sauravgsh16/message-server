@@ -3,7 +3,6 @@ package qclient
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -107,7 +106,8 @@ func (c *Connection) send(cf *proto.ChannelFrame) error {
 	c.sendMux.Unlock()
 
 	if err != nil {
-		go c.hardClose(err)
+		pErr := proto.NewHardError(500, err.Error(), 0, 0)
+		go c.hardClose(pErr)
 	}
 	c.outgoing <- &proto.WireFrame{
 		FrameType: uint8(proto.FrameMethod),
@@ -117,7 +117,7 @@ func (c *Connection) send(cf *proto.ChannelFrame) error {
 	return err
 }
 
-func (c *Connection) call(req proto.MethodFrame, res ...proto.MethodFrame) error {
+func (c *Connection) call(req proto.MethodFrame, resp ...proto.MethodFrame) error {
 	if req != nil {
 		if err := c.send(&proto.ChannelFrame{ChannelID: uint16(0), Method: req}); err != nil {
 			return err
@@ -132,7 +132,7 @@ func (c *Connection) call(req proto.MethodFrame, res ...proto.MethodFrame) error
 		return err
 	case msg := <-c.incoming:
 		// We try to match the 'res' - result types
-		for _, result := range res {
+		for _, result := range resp {
 			if reflect.TypeOf(msg) == reflect.TypeOf(result) {
 				// we updates res with the data in result
 				// Thus making, *result = *msg
@@ -192,7 +192,7 @@ func (c *Connection) openHost() error {
 	return nil
 }
 
-func (c *Connection) hardClose(err error) {
+func (c *Connection) hardClose(err *proto.Error) {
 	c.status.closing = true
 
 	c.destructor.Do(func() {
@@ -200,7 +200,7 @@ func (c *Connection) hardClose(err error) {
 		defer c.mux.Unlock()
 
 		if err != nil {
-			c.errors <- err.(*proto.Error)
+			c.errors <- err
 		}
 		close(c.errors)
 
@@ -236,8 +236,8 @@ func (c *Connection) handleIncoming() {
 		}
 		frame, err := proto.ReadFrame(c.conn)
 		if err != nil {
-			fmt.Printf("Error reading frame: %s", err.Error())
-			c.hardClose(err)
+			pErr := proto.NewHardError(500, err.Error(), 0, 0)
+			c.hardClose(pErr)
 			break
 		}
 		c.handleFrame(frame)
@@ -281,7 +281,7 @@ func (c *Connection) dispatchN(wf *proto.WireFrame) {
 	if ch != nil {
 		ch.incoming <- wf
 	} else {
-		// We expect the method here to be ChannelClose, or ChannelCloseOk
+		// We expect the method here to be ConnectionCloseOk, ChannelClose, or ChannelCloseOk
 		c.routeMethod(wf)
 	}
 }
@@ -298,7 +298,7 @@ func (c *Connection) routeMethod(wf *proto.WireFrame) *proto.Error {
 	switch clsID {
 	case 10:
 		switch mtdID {
-		case 30:
+		case 30: // ConnectionClose
 			c.send(&proto.ChannelFrame{
 				ChannelID: uint16(0),
 				Method:    &proto.ConnectionCloseOk{},
@@ -308,7 +308,7 @@ func (c *Connection) routeMethod(wf *proto.WireFrame) *proto.Error {
 		}
 	case 20:
 		switch mtdID {
-		case 30:
+		case 30: // ChannelClose
 			c.send(&proto.ChannelFrame{
 				ChannelID: uint16(wf.Channel),
 				Method:    &proto.ChannelCloseOk{},

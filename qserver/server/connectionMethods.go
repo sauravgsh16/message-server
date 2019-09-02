@@ -19,9 +19,10 @@ func (ch *Channel) connectionRoute(conn *Connection, mf proto.MethodFrame) *prot
 	case *proto.ConnectionCloseOk:
 		return ch.connectionCloseOk(conn, method)
 
+	default:
+		clsID, mtdId := mf.MethodIdentifier()
+		return proto.NewHardError(540, "unable to route frame", clsID, mtdId)
 	}
-	classId, methodId := mf.MethodIdentifier()
-	return proto.NewHardError(540, "unable to route frame", classId, methodId)
 }
 
 func (ch *Channel) connectionOpen(c *Connection, m *proto.ConnectionOpen) *proto.Error {
