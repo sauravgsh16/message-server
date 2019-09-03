@@ -140,12 +140,12 @@ func (conn *Connection) handleFrame(wf *proto.WireFrame) {
 		conn.hardClose()
 		return
 	}
-	channel, ok := conn.channels[wf.Channel]
+	ch, ok := conn.channels[wf.Channel]
 	if !ok {
-		channel = NewChannel(wf.Channel, conn)
-		conn.channels[wf.Channel] = channel
+		ch = NewChannel(wf.Channel, conn)
+		conn.channels[wf.Channel] = ch
 		conn.channels[wf.Channel].start()
 	}
 	// Dispatch frame to channel
-	channel.incoming <- wf
+	ch.incoming <- wf
 }

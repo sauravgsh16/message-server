@@ -1606,6 +1606,14 @@ func (f *BasicPublish) Wait() bool {
 	return false
 }
 
+func (f *BasicPublish) GetBody() []byte {
+	return f.Body
+}
+
+func (f *BasicPublish) SetBody(b []byte) {
+	f.Body = b
+}
+
 func (f *BasicPublish) Read(r io.Reader) (err error) {
 	f.Exchange, err = ReadLongStr(r)
 	if err != nil {
@@ -1671,6 +1679,14 @@ func (f *BasicReturn) Wait() bool {
 	return false
 }
 
+func (f *BasicReturn) GetBody() []byte {
+	return f.Body
+}
+
+func (f *BasicReturn) SetBody(b []byte) {
+	f.Body = b
+}
+
 func (f *BasicReturn) Read(r io.Reader) (err error) {
 	f.ReplyCode, err = ReadShort(r)
 	if err != nil {
@@ -1734,6 +1750,14 @@ func (f *BasicDeliver) FrameType() byte {
 
 func (f *BasicDeliver) Wait() bool {
 	return false
+}
+
+func (f *BasicDeliver) GetBody() []byte {
+	return f.Body
+}
+
+func (f *BasicDeliver) SetBody(b []byte) {
+	f.Body = b
 }
 
 func (f *BasicDeliver) Read(r io.Reader) (err error) {

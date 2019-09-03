@@ -17,6 +17,12 @@ type MethodFrame interface {
 	Wait() bool
 }
 
+type MethodContentFrame interface {
+	MethodFrame
+	GetBody() []byte
+	SetBody([]byte)
+}
+
 type MessageResourceHolder interface {
 	AcquireResources(qm *QueueMessage) bool
 	ReleaseResources(qm *QueueMessage)

@@ -2,6 +2,7 @@ package qclient
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 	"sync"
 
@@ -30,7 +31,7 @@ type Channel struct {
 	outgoing       chan *proto.WireFrame
 	rpc            chan *proto.MethodFrame
 	conn           *Connection
-	consumers      *Consumer
+	consumers      *Consumers
 	sendMux        sync.Mutex
 	notifyMux      sync.Mutex
 	state          uint8
@@ -53,7 +54,7 @@ func newChannel(c *Connection, id uint16) *Channel {
 		incoming:  make(chan *proto.WireFrame),
 		outgoing:  c.outgoing,
 		rpc:       make(chan *proto.MethodFrame),
-		consumers: createConsumers(),
+		consumers: CreateNewConsumers(),
 	}
 }
 
@@ -92,7 +93,37 @@ func (ch *Channel) send(mf proto.MethodFrame) error {
 	if ch.state == CH_CLOSED {
 		return ch.sendClosed(mf)
 	}
+	if content, ok := mf.(proto.MethodContentFrame); ok {
+		if err := ch.updateCurrentMessage(content); err != nil {
+			return errors.New(err.Error())
+		}
+		ch.sendContent(ch.currentMessage, mf)
+	}
 	return ch.sendMethod(mf)
+}
+
+func (ch *Channel) updateCurrentMessage(mcf proto.MethodContentFrame) *proto.Error {
+	clsID, mtdID := mcf.MethodIdentifier()
+	body := mcf.GetBody()
+	if ch.currentMessage == nil {
+		return proto.NewSoftError(500, "Unexpected Message update", clsID, mtdID)
+	}
+	ch.currentMessage.Header = &proto.HeaderFrame{
+		Class:    clsID,
+		BodySize: uint64(len(body)),
+	}
+
+	// TODO:
+	// BODY TO BE CHUNKED INTO AGREED MAX FRAME SIZE
+	// SINCE CONFIGURATION HANDSHAKE IS NOT YET IMPLEMENTED, FRAME SIZE WILL
+	// BE THE SIZE OF BODY.
+	ch.currentMessage.Payload = append(ch.currentMessage.Payload,
+		&proto.WireFrame{
+			FrameType: proto.FrameBody,
+			Channel:   ch.id,
+			Payload:   body,
+		})
+	return nil
 }
 
 func (ch *Channel) sendClosed(mf proto.MethodFrame) error {
@@ -166,7 +197,7 @@ func (ch *Channel) open() error {
 	return ch.call(&proto.ChannelOpen{}, &proto.ChannelOpenOk{})
 }
 
-func (ch *Channel) shutDown(err *proto.Error) {
+func (ch *Channel) shutdown(err *proto.Error) {
 	ch.destructor.Do(func() {
 		ch.sendMux.Lock()
 		defer ch.sendMux.Unlock()
@@ -357,6 +388,13 @@ func (ch *Channel) Close() error {
 	)
 }
 
+func (ch *Channel) Flow(active bool) error {
+	return ch.call(
+		&proto.ChannelFlow{Active: active},
+		&proto.ChannelFlowOk{},
+	)
+}
+
 func (ch *Channel) NotifyClose(c chan *proto.Error) chan *proto.Error {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -530,4 +568,95 @@ func (ch *Channel) QueueDelete(name string, ifunused, ifempty, noWait bool) (int
 	}
 	resp := &proto.QueueDeleteOk{}
 	return int(resp.MessageCnt), ch.call(req, resp)
+}
+
+func (ch *Channel) Publish(exchange, key string, immediate bool, body []byte) error {
+	bp := &proto.BasicPublish{
+		Exchange:   exchange,
+		RoutingKey: key,
+		Immediate:  immediate,
+		Body:       body,
+	}
+	ch.currentMessage = proto.NewMessage(bp)
+	if err := ch.send(bp); err != nil {
+		return err
+	}
+	ch.currentMessage = nil
+	return nil
+}
+
+func (ch *Channel) Cancel(tag string, noWait bool) error {
+	req := &proto.BasicCancel{
+		ConsumerTag: tag,
+		NoWait:      noWait,
+	}
+	resp := &proto.BasicCancelOk{}
+	if err := ch.call(req, resp); err != nil {
+		return err
+	}
+
+	ch.consumers.cancel(tag)
+	return nil
+}
+
+func (ch *Channel) Consume(queue, consumer string, noAck, noWait bool) (<-chan Delivery, error) {
+	req := &proto.BasicConsume{
+		Queue:       queue,
+		ConsumerTag: consumer,
+		NoAck:       noAck,
+		NoWait:      noWait,
+	}
+	resp := &proto.BasicConsumeOk{}
+
+	dChan := make(chan Delivery)
+	ch.consumers.add(consumer, dChan)
+
+	if err := ch.call(req, resp); err != nil {
+		ch.consumers.cancel(consumer)
+		return nil, err
+	}
+
+	return dChan, nil
+}
+
+func (ch *Channel) Ack(tag uint64, multiple bool) error {
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	return ch.send(&proto.BasicAck{
+		DeliveryTag: tag,
+		Multiple:    multiple,
+	})
+}
+
+func (ch *Channel) Nack(tag uint64, multiple bool, requeue bool) error {
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	return ch.send(&proto.BasicNack{
+		DeliveryTag: tag,
+		Multiple:    multiple,
+		Requeue:     requeue,
+	})
+}
+
+func (ch *Channel) TxSelect() error {
+	return ch.call(
+		&proto.TxSelect{},
+		&proto.TxSelectOk{},
+	)
+}
+
+func (ch *Channel) TxCommit() error {
+	return ch.call(
+		&proto.TxCommit{},
+		&proto.TxCommitOk{},
+	)
+}
+
+func (ch *Channel) TxRollBack() error {
+	return ch.call(
+		&proto.TxRollback{},
+		&proto.TxRollbackOk{},
+	)
 }
