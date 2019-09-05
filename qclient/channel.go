@@ -20,7 +20,14 @@ const (
 // ****************************************
 type Return struct{}
 
+type Confirmation struct {
+	DeliveryTag uint64
+	State       bool
+}
+
 type confirms struct{}
+
+func (c *confirms) AddListener(ch chan Confirmation) {}
 
 // *****************************************
 
@@ -35,9 +42,6 @@ type Channel struct {
 	sendMux        sync.Mutex
 	notifyMux      sync.Mutex
 	state          uint8
-	currentMessage *proto.Message
-	header         *proto.HeaderFrame
-	body           []byte
 	errors         chan *proto.Error
 	confirms       *confirms
 	flows          []chan bool
@@ -45,6 +49,9 @@ type Channel struct {
 	closes         []chan *proto.Error
 	returns        []chan Return
 	noNotify       bool
+	body           []byte
+	currentMessage *proto.Message
+	bodyMf         proto.MethodContentFrame 
 }
 
 func newChannel(c *Connection, id uint16) *Channel {
@@ -255,19 +262,22 @@ func (ch *Channel) startReceiver() {
 				break
 			}
 			var err *proto.Error
-			frame := <-ch.incoming
+			wf := <-ch.incoming
 
-			switch frame.FrameType {
+			switch wf.FrameType {
 			case uint8(proto.FrameMethod):
-				err = ch.dispatchRpc(frame)
+				err = ch.handleMethod(wf)
+
 			case uint8(proto.FrameHeader):
 				if ch.state != CH_CLOSING {
-					err = ch.handleHeader(frame)
+					err = ch.handleHeader(wf)
 				}
+
 			case uint8(proto.FrameBody):
 				if ch.state != CH_CLOSING {
-					err = ch.handleBody(frame)
+					err = ch.handleBody(wf)
 				}
+
 			default:
 				err = proto.NewHardError(500, "Unknown frame type", 0, 0)
 			}
@@ -275,18 +285,10 @@ func (ch *Channel) startReceiver() {
 				ch.sendError(err)
 			}
 		}
-
 	}()
 }
 
-func (ch *Channel) dispatchRpc(wf *proto.WireFrame) *proto.Error {
-	reader := bytes.NewReader(wf.Payload)
-
-	mf, err := proto.ReadMethod(reader)
-	if err != nil {
-		pErr := proto.NewHardError(500, err.Error(), 0, 0)
-		return pErr
-	}
+func (ch *Channel) dispatchRpc(mf proto.MethodFrame) *proto.Error {
 
 	switch m := mf.(type) {
 
@@ -331,6 +333,25 @@ func (ch *Channel) dispatchRpc(wf *proto.WireFrame) *proto.Error {
 	return nil
 }
 
+func (ch *Channel) handleMethod(wf *proto.WireFrame) *proto.Error {
+	r := bytes.NewReader(wf.Payload)
+
+	mf, err := proto.ReadMethod(r)
+	if err != nil {
+		pErr := proto.NewHardError(500, err.Error(), 0, 0)
+		return pErr
+	}
+
+	if content, ok := mf.(proto.MethodContentFrame); ok {
+		ch.body = make([]byte, 0)
+		ch.currentMessage = proto.NewMessage(content)
+		ch.bodyMf = content
+	} else {
+		ch.dispatchRpc(mf)
+	}
+	return nil
+}
+
 func (ch *Channel) handleHeader(wf *proto.WireFrame) *proto.Error {
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "Unexpected header frame. No current message set", 0, 0)
@@ -366,18 +387,29 @@ func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
 	}
 
 	if size < ch.currentMessage.Header.BodySize {
-		// We still need to wait for addition bodyframes
+		// We still need to wait for additional bodyframes
 		return nil
 	}
 
-	// TODO
-	// HERE WE NEED TO SEND IT TO CONSUMER FOR CONSUMPTION.
-	// HOW TO DO IT ??
+	for _, wf := range ch.currentMessage.Payload {
+		ch.body = append(ch.body, wf.Payload...)
+	}
 
-	// Need to set ch.currentMessage = nil
-	// For next message
+	var err *proto.Error
 
-	return nil
+	ch.bodyMf.SetBody(ch.body)
+	if err := ch.dispatchRpc(ch.bodyMf); err != nil {
+		err = proto.NewSoftError(500, "Unable to dispatch method content frame", 0, 0)
+	}
+
+	ch.resetMessages()
+	return err
+}
+
+func (ch *Channel) resetMessages() {
+	ch.body = nil
+	ch.bodyMf = nil
+	ch.currentMessage = nil
 }
 
 func (ch *Channel) Close() error {

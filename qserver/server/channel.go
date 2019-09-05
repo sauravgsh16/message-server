@@ -376,7 +376,7 @@ func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
 		return nil
 	}
 
-	ex, _ := ch.server.exchanges[ch.currentMessage.Method.Exchange]
+	ex, _ := ch.server.exchanges[ch.currentMessage.Method.(*proto.BasicPublish).Exchange]
 
 	if ch.txMode {
 		// Add message to a List

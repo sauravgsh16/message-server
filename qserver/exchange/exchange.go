@@ -108,21 +108,21 @@ func (ex *Exchange) RemoveQueueBindings(qname string) {
 func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.Error) {
 	clsID, mtdID := msg.Method.MethodIdentifier()
 	queues := make([]string, 0)
-	if ex.Name != msg.Method.Exchange {
+	if ex.Name != msg.Method.(*proto.BasicPublish).Exchange {
 		return queues, proto.NewSoftError(404, "Exchange name MisMatch", clsID, mtdID)
 	}
 
 	switch {
 	case ex.ExType == EX_DIRECT:
 		for _, b := range ex.bindings {
-			if b.CheckDirectMatches(msg.Method) {
+			if b.CheckDirectMatches(msg.Method.(*proto.BasicPublish)) {
 				queues = append(queues, b.QueueName)
 				return queues, nil
 			}
 		}
 	case ex.ExType == EX_FANOUT:
 		for _, b := range ex.bindings {
-			if b.CheckDirectMatches(msg.Method) {
+			if b.CheckDirectMatches(msg.Method.(*proto.BasicPublish)) {
 				queues = append(queues, b.QueueName)
 			}
 		}

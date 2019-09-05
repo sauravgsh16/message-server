@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/streadway/amqp"
+	"github.com/sauravgsh16/secoc-third/qclient"
 )
 
 func failOnError(err error, msg string) {
@@ -13,7 +13,7 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	conn, err := amqp.Dial("localhost:9000")
+	conn, err := qclient.Dial("tcp://localhost:9000")
 	failOnError(err, "Failed to connect to qserver")
 	defer conn.Close()
 

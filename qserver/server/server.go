@@ -188,8 +188,8 @@ func (s *Server) basicReturnMsg(msg *proto.Message, code uint16, text string) *p
 	return &proto.BasicReturn{
 		ReplyCode:  code,
 		ReplyText:  text,
-		Exchange:   msg.Method.Exchange,
-		RoutingKey: msg.Method.RoutingKey,
+		Exchange:   msg.Method.(*proto.BasicReturn).Exchange,
+		RoutingKey: msg.Method.(*proto.BasicReturn).RoutingKey,
 	}
 }
 
@@ -215,7 +215,7 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 		return nil, proto.NewSoftError(500, errObj.Error(), clsID, mtdID)
 	}
 
-	if msg.Method.Immediate {
+	if msg.Method.(*proto.BasicPublish).Immediate {
 		return s.consumeMsgImmediate(msg, queues, mapQueueWithQueueMessages)
 	}
 	s.addMsgForConsumption(msg, queues, mapQueueWithQueueMessages)

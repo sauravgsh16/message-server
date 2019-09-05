@@ -28,14 +28,22 @@ type MessageResourceHolder interface {
 	ReleaseResources(qm *QueueMessage)
 }
 
-func NewMessage(m *BasicPublish) *Message {
-	return &Message{
+func NewMessage(mcf MethodContentFrame) *Message {
+	msg := &Message{
 		ID:         NextCnt(),
-		Method:     m,
-		Exchange:   m.Exchange,
-		RoutingKey: m.RoutingKey,
 		Payload:    make([]*WireFrame, 0, 1),
 	}
+	switch m := mcf.(type) {
+	case *BasicPublish:
+		msg.Method = m
+		msg.Exchange = m.Exchange
+		msg.RoutingKey = m.RoutingKey
+	case *BasicDeliver:
+		msg.Method = m
+		msg.Exchange = m.Exchange
+		msg.RoutingKey = m.RoutingKey
+	}
+	return msg
 }
 
 func NewTxMessage(msg *Message, qn string) *TxMessage {

@@ -15,7 +15,7 @@ type URI struct {
 var defaultUri = URI{
 	scheme: "tcp",
 	host:   "localhost",
-	port:   "9001",
+	port:   "9000",
 }
 
 var errURIWhitespace = errors.New("URI contain whitespace")

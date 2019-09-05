@@ -22,7 +22,7 @@ type Message struct {
 	Payload    []*WireFrame
 	Exchange   string
 	RoutingKey string
-	Method     *BasicPublish
+	Method     MethodContentFrame
 }
 
 type QueueMessage struct {

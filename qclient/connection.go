@@ -95,6 +95,21 @@ func (c *Connection) IsClosed() bool {
 	return c.status.closed
 }
 
+func (c *Connection) Close() error {
+	if c.IsClosed() {
+		return ErrClosed
+	}
+
+	defer c.hardClose(nil)
+	return c.call(
+		&proto.ConnectionClose{
+			ReplyCode: 200,
+			ReplyText: "Bye",
+		},
+		&proto.ConnectionCloseOk{},
+	)
+}
+
 func (c *Connection) send(cf *proto.ChannelFrame) error {
 	if c.IsClosed() {
 		return ErrClosed
@@ -144,7 +159,6 @@ func (c *Connection) call(req proto.MethodFrame, resp ...proto.MethodFrame) erro
 		}
 		return ErrInvalidCommand
 	}
-	return nil
 }
 
 func (c *Connection) open() error {
@@ -155,6 +169,7 @@ func (c *Connection) open() error {
 	if err := c.send(header); err != nil {
 		return err
 	}
+
 	return c.openStart()
 }
 
@@ -360,6 +375,11 @@ func (c *Connection) openChannel() (*Channel, error) {
 		return nil, err
 	}
 	return ch, nil
+}
+
+func (c *Connection) closeChannel(ch *Channel, err *proto.Error) {
+	ch.shutdown(err)
+	c.releaseChannel(ch.id)
 }
 
 func (c *Connection) Channel() (*Channel, error) {
