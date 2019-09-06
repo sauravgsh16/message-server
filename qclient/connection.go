@@ -250,7 +250,7 @@ func (c *Connection) handleIncoming() {
 			break
 		}
 		frame, err := proto.ReadFrame(c.conn)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			pErr := proto.NewHardError(500, err.Error(), 0, 0)
 			c.hardClose(pErr)
 			break

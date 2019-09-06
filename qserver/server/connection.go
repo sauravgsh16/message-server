@@ -1,8 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"sync"
@@ -56,46 +56,49 @@ func NewConnection(s *Server, n net.Conn) *Connection {
 	}
 }
 
-func (conn *Connection) openConnection() {
+func (c *Connection) openConnection() {
+	/*
+		// Protocol Handshake
+		buf := make([]byte, 5)
+		_, err := c.network.Read(buf)
+		if err != nil {
+			fmt.Printf("Error reading protocol header")
+			c.hardClose()
+			return
+		}
 
-	// Protocol Handshake
-	buf := make([]byte, 5)
-	_, err := conn.network.Read(buf)
-	if err != nil {
-		fmt.Printf("Error reading protocol header")
-		conn.hardClose()
-		return
-	}
-
-	protoBytes := []byte{'S', 'E', 'C', 'O', 'C'}
-	if bytes.Compare(buf, protoBytes) != 0 {
-		// Write on connection, for client to send correct data for handshake
-		conn.network.Write(protoBytes)
-		conn.hardClose()
-		return
-	}
-
+		protoBytes := []byte{'S', 'E', 'C', 'O', 'C'}
+		if bytes.Compare(buf, protoBytes) != 0 {
+			// Write on connection, for client to send correct data for handshake
+			c.network.Write(protoBytes)
+			c.hardClose()
+			return
+		}
+	*/
 	// Create channel 0 and start the connection handshake
-	conn.channels[0] = NewChannel(0, conn)
-	conn.channels[0].start()
-	conn.handleOutgoing()
-	conn.handleIncoming()
+
+	fmt.Printf("Connection initiated, %+v\n", c.network)
+
+	c.channels[0] = NewChannel(0, c)
+	c.channels[0].start()
+	c.handleOutgoing()
+	c.handleIncoming()
 }
 
-func (conn *Connection) hardClose() {
-	conn.network.Close()
-	conn.status.closed = true
-	conn.server.deleteConnection(conn.id)
-	conn.server.deleteQueuesForConn(conn.id)
-	for _, ch := range conn.channels {
+func (c *Connection) hardClose() {
+	c.network.Close()
+	c.status.closed = true
+	c.server.deleteConnection(c.id)
+	c.server.deleteQueuesForConn(c.id)
+	for _, ch := range c.channels {
 		ch.shutdown()
 	}
 }
 
-func (conn *Connection) closeConnWithError(err *proto.Error) {
+func (c *Connection) closeConnWithError(err *proto.Error) {
 	fmt.Println("Sending connection close: ", err.Msg)
-	conn.status.closing = true
-	conn.channels[0].SendMethod(&proto.ConnectionClose{
+	c.status.closing = true
+	c.channels[0].SendMethod(&proto.ConnectionClose{
 		ReplyCode: err.Code,
 		ReplyText: err.Msg,
 		ClassId:   err.Class,
@@ -103,48 +106,48 @@ func (conn *Connection) closeConnWithError(err *proto.Error) {
 	})
 }
 
-func (conn *Connection) removeChannel(chId uint16) {
-	delete(conn.channels, chId)
+func (c *Connection) removeChannel(chId uint16) {
+	delete(c.channels, chId)
 }
 
-func (conn *Connection) handleIncoming() {
+func (c *Connection) handleIncoming() {
 	for {
-		if conn.status.closed {
+		if c.status.closed {
 			break
 		}
-		frame, err := proto.ReadFrame(conn.network)
-		if err != nil {
+		frame, err := proto.ReadFrame(c.network)
+		if err != nil && err != io.EOF {
 			fmt.Printf("Error reading frame: %s", err.Error())
-			conn.hardClose()
+			c.hardClose()
 			break
 		}
-		conn.handleFrame(frame)
+		c.handleFrame(frame)
 	}
 }
 
-func (conn *Connection) handleOutgoing() {
+func (c *Connection) handleOutgoing() {
 	go func() {
 		for {
-			if conn.status.closed {
+			if c.status.closed {
 				break
 			}
-			frame := <-conn.outgoing
-			proto.WriteFrame(conn.network, frame)
+			frame := <-c.outgoing
+			proto.WriteFrame(c.network, frame)
 		}
 	}()
 }
 
-func (conn *Connection) handleFrame(wf *proto.WireFrame) {
+func (c *Connection) handleFrame(wf *proto.WireFrame) {
 	// if !conn.status.open && f.Channel != 0 {
-	if !conn.status.open {
-		conn.hardClose()
+	if !c.status.open {
+		c.hardClose()
 		return
 	}
-	ch, ok := conn.channels[wf.Channel]
+	ch, ok := c.channels[wf.Channel]
 	if !ok {
-		ch = NewChannel(wf.Channel, conn)
-		conn.channels[wf.Channel] = ch
-		conn.channels[wf.Channel].start()
+		ch = NewChannel(wf.Channel, c)
+		c.channels[wf.Channel] = ch
+		c.channels[wf.Channel].start()
 	}
 	// Dispatch frame to channel
 	ch.incoming <- wf
