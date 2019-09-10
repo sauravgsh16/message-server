@@ -15,6 +15,7 @@ type MessageFrame interface {
 	Write(w io.Writer) (err error)
 	FrameType() byte
 	Wait() bool
+	MethodName() string
 }
 
 type MessageContentFrame interface {

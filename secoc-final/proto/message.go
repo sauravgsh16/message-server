@@ -7,13 +7,17 @@ import (
 	"io"
 )
 
-type WireFrame struct {
-	FrameType uint8
-	Channel   uint16
-	Payload   []byte
+type ProtocolHeader struct{}
+
+func (*ProtocolHeader) Channel() uint16 {
+	panic("Should never be called")
 }
 
-// Used
+func (*ProtocolHeader) Write(w io.Writer) (err error) {
+	_, err = w.Write([]byte{'S', 'E', 'C', 'O', 'C'})
+	return err
+}
+
 type MethodFrame struct {
 	ChannelID uint16
 	ClassID   uint16
@@ -82,15 +86,10 @@ func (bf *BodyFrame) Write(w io.Writer) error {
 	return writeFrame(w, FrameBody, bf.ChannelID, bf.Body)
 }
 
-type ChannelFrame struct {
-	ChannelID uint16
-	Method    MessageFrame
-}
-
 type Message struct {
 	ID         int64
 	Header     *HeaderFrame
-	Payload    []*WireFrame
+	Payload    []byte
 	Exchange   string
 	RoutingKey string
 	Method     MessageContentFrame
@@ -114,11 +113,10 @@ type IndexMessage struct {
 	Persisted     bool
 }
 
-/*
-func NewMessage(mcf MethodContentFrame) *Message {
+func NewMessage(mcf MessageContentFrame) *Message {
 	msg := &Message{
 		ID:      NextCnt(),
-		Payload: make([]*WireFrame, 0, 1),
+		Payload: make([]byte, 0),
 	}
 	switch m := mcf.(type) {
 	case *BasicPublish:
@@ -132,7 +130,6 @@ func NewMessage(mcf MethodContentFrame) *Message {
 	}
 	return msg
 }
-*/
 
 func NewTxMessage(msg *Message, qn string) *TxMessage {
 	return &TxMessage{

@@ -12,7 +12,8 @@ type Reader struct {
 }
 
 func (r Reader) ReadFrame() (frame Frame, err error) {
-	incoming := make([]byte, 7)
+
+	var incoming [7]byte
 
 	if _, err := io.ReadFull(r.R, incoming[:7]); err != nil {
 		return nil, err
@@ -82,61 +83,62 @@ func (r Reader) readBody(channel uint16, size uint32) (Frame, error) {
 	return bf, nil
 }
 
-func ReadOctet(buf io.Reader) (data byte, err error) {
-	if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+func ReadOctet(r io.Reader) (data byte, err error) {
+	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read byte: " + err.Error())
 	}
 	return data, nil
 }
 
-func ReadShort(buf io.Reader) (data uint16, err error) {
-	if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+func ReadShort(r io.Reader) (data uint16, err error) {
+	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read uint16: " + err.Error())
 	}
 	return data, nil
 }
 
-func ReadLong(buf io.Reader) (data uint32, err error) {
-	if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+func ReadLong(r io.Reader) (data uint32, err error) {
+	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read uint32: " + err.Error())
 	}
 	return data, nil
 }
 
-func ReadLongLong(buf io.Reader) (data uint64, err error) {
-	if err = binary.Read(buf, binary.BigEndian, &data); err != nil {
+func ReadLongLong(r io.Reader) (data uint64, err error) {
+	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("could not read uint64: " + err.Error())
 	}
 	return data, nil
 }
 
-func ReadShortStr(buf io.Reader) (data string, err error) {
+func ReadShortStr(r io.Reader) (data string, err error) {
 	var lenght uint8
-	if err = binary.Read(buf, binary.BigEndian, &lenght); err != nil {
+	if err = binary.Read(r, binary.BigEndian, &lenght); err != nil {
 		return "", err
 	}
 
 	slice := make([]byte, lenght)
-	if err = binary.Read(buf, binary.BigEndian, slice); err != nil {
+	if _, err = io.ReadFull(r, slice); err != nil {
 		return "", err
 	}
 	return string(slice), nil
 }
 
-func readLongStr(buf io.Reader) ([]byte, error) {
+func readLongStr(r io.Reader) ([]byte, error) {
 	var length uint32
-	if err := binary.Read(buf, binary.BigEndian, &length); err != nil {
+	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
 		return nil, err
 	}
+
 	var slice = make([]byte, length)
-	if err := binary.Read(buf, binary.BigEndian, slice); err != nil {
+	if _, err := io.ReadFull(r, slice); err != nil {
 		return nil, err
 	}
 	return slice, nil
 }
 
-func ReadLongStr(buf io.Reader) (string, error) {
-	slice, err := readLongStr(buf)
+func ReadLongStr(r io.Reader) (string, error) {
+	slice, err := readLongStr(r)
 	if err != nil {
 		return "", err
 	}

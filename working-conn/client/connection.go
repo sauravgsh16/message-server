@@ -92,7 +92,6 @@ func (c *Connection) handleIncoming(r io.Reader) {
 	buf := bufio.NewReader(r)
 	frames := &reader{r: buf}
 
-	count := 0
 	for {
 		frame, err := frames.ReadFrame()
 
@@ -101,8 +100,6 @@ func (c *Connection) handleIncoming(r io.Reader) {
 		}
 
 		c.demux(frame)
-		count++
-		fmt.Printf("Count: %d\n", count)
 	}
 }
 

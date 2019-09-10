@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sauravgsh16/secoc-third/working-conn/client"
+	"github.com/sauravgsh16/secoc-third/secoc-final/qclient"
 )
 
 func failOnError(err error, msg string) {
@@ -14,9 +14,9 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	conn, err := client.Dial("tcp://localhost:9000")
+	_, err := qclient.Dial("tcp://localhost:9000")
 	failOnError(err, "Failed to connect to qserver")
 
 	fmt.Println("Success")
-	conn.Close()
+	// conn.Close()
 }

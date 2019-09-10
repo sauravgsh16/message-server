@@ -62,6 +62,7 @@ func NewConnection(s *Server, n net.Conn) *Connection {
 
 func (c *Connection) openConnection() {
 	// Protocol Handshake
+
 	buf := make([]byte, 5)
 	_, err := c.network.Read(buf)
 	if err != nil {
@@ -100,7 +101,7 @@ func (c *Connection) hardClose() {
 func (c *Connection) closeConnWithError(err *proto.Error) {
 	fmt.Println("Sending connection close: ", err.Msg)
 	c.status.closing = true
-	c.channels[0].SendMethod(&proto.ConnectionClose{
+	c.channels[0].Send(&proto.ConnectionClose{
 		ReplyCode: err.Code,
 		ReplyText: err.Msg,
 		ClassId:   err.Class,
@@ -109,7 +110,23 @@ func (c *Connection) closeConnWithError(err *proto.Error) {
 }
 
 func (c *Connection) removeChannel(chId uint16) {
+	c.mux.Lock()
 	delete(c.channels, chId)
+	c.mux.Unlock()
+}
+
+func (c *Connection) send(f proto.Frame) error {
+	if c.status.closed {
+		return proto.NewHardError(500, "Sending on closed channel/Connection", 0, 0)
+	}
+	c.mux.Lock()
+	err := c.writer.WriteFrame(f)
+	c.mux.Unlock()
+	if err != nil {
+		fmt.Println(err.Error())
+		go c.hardClose()
+	}
+	return err
 }
 
 func (c *Connection) handleIncoming(r io.Reader) {
@@ -122,25 +139,12 @@ func (c *Connection) handleIncoming(r io.Reader) {
 			break
 		}
 		frame, err := frames.ReadFrame()
-		if err != nil && err != io.EOF {
+		if err != nil {
 			c.hardClose()
 			break
 		}
 		c.handleFrame(frame)
 	}
-}
-
-func (c *Connection) send(f proto.Frame) error {
-	if c.status.closed {
-		return proto.NewHardError(500, "Sending on closed channel/Connection", 0, 0)
-	}
-	c.mux.Lock()
-	err := c.writer.WriteFrame(f)
-	c.mux.Unlock()
-	if err != nil {
-		go c.hardClose()
-	}
-	return err
 }
 
 func (c *Connection) handleOutgoing() {
@@ -156,8 +160,7 @@ func (c *Connection) handleOutgoing() {
 }
 
 func (c *Connection) handleFrame(f proto.Frame) {
-	// if !conn.status.open && f.Channel != 0 {
-	if !c.status.open {
+	if !c.status.open && f.Channel() != 0 {
 		c.hardClose()
 		return
 	}

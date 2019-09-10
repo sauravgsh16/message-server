@@ -6,35 +6,6 @@ import (
 )
 
 // *********************
-//    ProtocolHeader
-// *********************
-
-func (*ProtocolHeader) MethodIdentifier() (uint16, uint16) {
-	return 0, 0
-}
-
-func (*ProtocolHeader) FrameType() byte {
-	return 1
-}
-
-func (*ProtocolHeader) MethodName() string {
-	return "ProtocolHeader"
-}
-
-func (*ProtocolHeader) Read(r io.Reader) (err error) {
-	return
-}
-
-func (*ProtocolHeader) Write(w io.Writer) (err error) {
-	_, err = w.Write([]byte{'S', 'E', 'C', 'O', 'C'})
-	return err
-}
-
-func (*ProtocolHeader) Wait() bool {
-	return false
-}
-
-// *********************
 //    CONNECTION SPECS
 // *********************
 
@@ -71,10 +42,6 @@ func (f *ConnectionStart) Read(r io.Reader) (err error) {
 }
 
 func (f *ConnectionStart) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteByte(w, f.Version); err != nil {
 		return errors.New("could not write version in ConnectionStart: " + err.Error())
@@ -120,10 +87,6 @@ func (f *ConnectionStartOk) Read(r io.Reader) (err error) {
 
 func (f *ConnectionStartOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteShortStr(w, f.Mechanism); err != nil {
 		return errors.New("could not write Mechanism in ConnectionStartOk: " + err.Error())
 	}
@@ -161,9 +124,6 @@ func (f *ConnectionOpen) Read(r io.Reader) (err error) {
 }
 
 func (f *ConnectionOpen) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteShortStr(w, f.Host); err != nil {
 		return errors.New("could not write Host in ConnectionOpen: " + err.Error())
@@ -198,10 +158,6 @@ func (f *ConnectionOpenOk) Read(r io.Reader) (err error) {
 }
 
 func (f *ConnectionOpenOk) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Response); err != nil {
 		return errors.New("could not write response in ConnectionOpenOk: " + err.Error())
@@ -252,10 +208,6 @@ func (f *ConnectionClose) Read(r io.Reader) (err error) {
 
 func (f *ConnectionClose) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteShort(w, f.ReplyCode); err != nil {
 		return errors.New("could not write ReplyCode in ConnectionClose: " + err.Error())
 	}
@@ -297,9 +249,7 @@ func (f *ConnectionCloseOk) Read(r io.Reader) (err error) {
 }
 
 func (f *ConnectionCloseOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -335,10 +285,6 @@ func (f *ChannelOpen) Read(r io.Reader) (err error) {
 
 func (f *ChannelOpen) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteShortStr(w, f.Reserved); err != nil {
 		return errors.New("could not write MethodId in ConnectionClose: " + err.Error())
 	}
@@ -372,10 +318,6 @@ func (f *ChannelOpenOk) Read(r io.Reader) (err error) {
 }
 
 func (f *ChannelOpenOk) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Response); err != nil {
 		return errors.New("could not write MethodId in ConnectionClose: " + err.Error())
@@ -411,10 +353,6 @@ func (f *ChannelFlow) Read(r io.Reader) (err error) {
 }
 
 func (f *ChannelFlow) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	var bits byte
 	if f.Active {
@@ -454,10 +392,6 @@ func (f *ChannelFlowOk) Read(r io.Reader) (err error) {
 }
 
 func (f *ChannelFlowOk) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	var bits byte
 	if f.Active {
@@ -512,10 +446,6 @@ func (f *ChannelClose) Read(r io.Reader) (err error) {
 
 func (f *ChannelClose) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteShort(w, f.ReplyCode); err != nil {
 		return errors.New("could not write ReplyCode in ChannelClose: " + err.Error())
 	}
@@ -558,9 +488,6 @@ func (f *ChannelCloseOk) Read(r io.Reader) (err error) {
 
 func (f *ChannelCloseOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -608,10 +535,6 @@ func (f *ExchangeDeclare) Read(r io.Reader) (err error) {
 
 func (f *ExchangeDeclare) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Exchange); err != nil {
 		return errors.New("could not write Exchange in ExchangeDeclare: " + err.Error())
 	}
@@ -656,9 +579,6 @@ func (f *ExchangeDeclareOk) Read(r io.Reader) (err error) {
 
 func (f *ExchangeDeclareOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -698,10 +618,6 @@ func (f *ExchangeDelete) Read(r io.Reader) (err error) {
 }
 
 func (f *ExchangeDelete) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Exchange); err != nil {
 		return errors.New("could not write Exchange in ExchangeDelete: " + err.Error())
@@ -747,9 +663,6 @@ func (f *ExchangeDeleteOk) Read(r io.Reader) (err error) {
 
 func (f *ExchangeDeleteOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -799,10 +712,6 @@ func (f *ExchangeBind) Read(r io.Reader) (err error) {
 
 func (f *ExchangeBind) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Destination); err != nil {
 		return errors.New("could not write Destination in ExchangeBind: " + err.Error())
 	}
@@ -851,9 +760,6 @@ func (f *ExchangeBindOk) Read(r io.Reader) (err error) {
 
 func (f *ExchangeBindOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -903,10 +809,6 @@ func (f *ExchangeUnbind) Read(r io.Reader) (err error) {
 
 func (f *ExchangeUnbind) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Destination); err != nil {
 		return errors.New("could not write Destination in ExchangeUnbind: " + err.Error())
 	}
@@ -955,9 +857,6 @@ func (f *ExchangeUnbindOk) Read(r io.Reader) (err error) {
 
 func (f *ExchangeUnbindOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -1007,10 +906,6 @@ func (f *QueueDeclare) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueDeclare) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Exchange in QueueDeclare: " + err.Error())
@@ -1065,10 +960,6 @@ func (f *QueueDeclareOk) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueDeclareOk) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Exchange in QueueDeclareOk: " + err.Error())
@@ -1130,10 +1021,6 @@ func (f *QueueBind) Read(r io.Reader) (err error) {
 
 func (f *QueueBind) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Destination in QueueBind: " + err.Error())
 	}
@@ -1182,9 +1069,6 @@ func (f *QueueBindOk) Read(r io.Reader) (err error) {
 
 func (f *QueueBindOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -1227,10 +1111,6 @@ func (f *QueueUnbind) Read(r io.Reader) (err error) {
 
 func (f *QueueUnbind) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Destination in QueueUnbind: " + err.Error())
 	}
@@ -1269,9 +1149,6 @@ func (f *QueueUnbindOk) Read(r io.Reader) (err error) {
 
 func (f *QueueUnbindOk) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 	return
 }
 
@@ -1311,9 +1188,6 @@ func (f *QueueDelete) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueDelete) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Queue in QueueDelete: " + err.Error())
@@ -1365,10 +1239,6 @@ func (f *QueueDeleteOk) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueDeleteOk) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLong(w, f.MessageCnt); err != nil {
 		return errors.New("could not write MessageCnt in QueueDeleteOk: " + err.Error())
@@ -1431,10 +1301,6 @@ func (f *BasicConsume) Read(r io.Reader) (err error) {
 
 func (f *BasicConsume) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Queue in BasicConsume: " + err.Error())
 	}
@@ -1486,9 +1352,6 @@ func (f *BasicConsumeOk) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicConsumeOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
 		return errors.New("could not write ConsumerTag in BasicConsumeOk: " + err.Error())
@@ -1531,9 +1394,6 @@ func (f *BasicCancel) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicCancel) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
 		return errors.New("could not write ConsumerTag in BasicCancel: " + err.Error())
@@ -1578,9 +1438,6 @@ func (f *BasicCancelOk) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicCancelOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.ConsumerTag); err != nil {
 		return errors.New("could not write ConsumerTag in BasicCancelOk: " + err.Error())
@@ -1636,10 +1493,6 @@ func (f *BasicPublish) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicPublish) Write(w io.Writer) (err error) {
-
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongStr(w, f.Exchange); err != nil {
 		return errors.New("could not write Exchange in BasicPublish: " + err.Error())
@@ -1712,9 +1565,6 @@ func (f *BasicReturn) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicReturn) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteShort(w, f.ReplyCode); err != nil {
 		return errors.New("could not write ReplyCode in BasicReturn: " + err.Error())
@@ -1786,10 +1636,6 @@ func (f *BasicDeliver) Read(r io.Reader) (err error) {
 
 func (f *BasicDeliver) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteShortStr(w, f.ConsumerTag); err != nil {
 		return errors.New("could not write ConsumerTag in BasicDeliver: " + err.Error())
 	}
@@ -1843,9 +1689,6 @@ func (f *BasicAck) Read(r io.Reader) (err error) {
 }
 
 func (f *BasicAck) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
 
 	if err = WriteLongLong(w, f.DeliveryTag); err != nil {
 		return errors.New("could not write DeliveryTag in BasicAck: " + err.Error())
@@ -1899,10 +1742,6 @@ func (f *BasicNack) Read(r io.Reader) (err error) {
 
 func (f *BasicNack) Write(w io.Writer) (err error) {
 
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
-
 	if err = WriteLongLong(w, f.DeliveryTag); err != nil {
 		return errors.New("could not write DeliveryTag in BasicNack: " + err.Error())
 	}
@@ -1955,9 +1794,7 @@ func (f *TxSelect) Read(r io.Reader) (err error) {
 }
 
 func (f *TxSelect) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -1984,9 +1821,7 @@ func (f *TxSelectOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxSelectOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -2013,9 +1848,7 @@ func (f *TxCommit) Read(r io.Reader) (err error) {
 }
 
 func (f *TxCommit) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -2042,9 +1875,7 @@ func (f *TxCommitOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxCommitOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -2071,9 +1902,7 @@ func (f *TxRollback) Read(r io.Reader) (err error) {
 }
 
 func (f *TxRollback) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
 
@@ -2100,8 +1929,6 @@ func (f *TxRollbackOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxRollbackOk) Write(w io.Writer) (err error) {
-	if err = WriteMethodIdentifier(w, f); err != nil {
-		return err
-	}
+
 	return
 }
