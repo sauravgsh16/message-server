@@ -3,7 +3,6 @@ package qclient
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -44,7 +43,7 @@ type Connection struct {
 	incoming   chan proto.MessageFrame
 	status     ConnectionStatus
 	statusMux  sync.RWMutex
-	errors     chan error
+	errors     chan *proto.Error
 	allocator  *allocate.Allocator
 	writer     *proto.Writer
 }
@@ -80,7 +79,7 @@ func Open(conn io.ReadWriteCloser) (*Connection, error) {
 		channels: make(map[uint16]*Channel),
 		outgoing: make(chan proto.Frame),
 		incoming: make(chan proto.MessageFrame),
-		errors:   make(chan error, 1),
+		errors:   make(chan *proto.Error, 1),
 		status:   ConnectionStatus{},
 		writer:   &proto.Writer{W: bufio.NewWriter(conn)},
 	}
@@ -119,7 +118,8 @@ func (c *Connection) send(f proto.Frame) error {
 	err := c.writer.WriteFrame(f)
 	c.mux.Unlock()
 	if err != nil {
-		go c.hardClose(err)
+		pErr := proto.NewHardError(500, err.Error(), 0, 0)
+		go c.hardClose(pErr)
 	}
 	return err
 }
@@ -151,6 +151,7 @@ func (c *Connection) call(req proto.MessageFrame, resp ...proto.MessageFrame) er
 				return nil
 			}
 		}
+
 		return ErrInvalidCommand
 	}
 }
@@ -195,7 +196,7 @@ func (c *Connection) openHost() error {
 	return nil
 }
 
-func (c *Connection) hardClose(err error) {
+func (c *Connection) hardClose(err *proto.Error) {
 	c.status.closing = true
 
 	c.destructor.Do(func() {
@@ -208,10 +209,7 @@ func (c *Connection) hardClose(err error) {
 		close(c.errors)
 
 		for _, ch := range c.channels {
-
-			fmt.Printf("Channels %+v", ch)
-
-			// ch.shutdown(err)
+			ch.shutdown(err)
 		}
 
 		c.conn.Close()
@@ -245,7 +243,8 @@ func (c *Connection) handleIncoming(r io.Reader) {
 		}
 		frame, err := frames.ReadFrame()
 		if err != nil {
-			c.hardClose(err)
+			pErr := proto.NewHardError(500, err.Error(), 0, 0)
+			c.hardClose(pErr)
 			break
 		}
 		if frame != nil {
@@ -289,10 +288,8 @@ func (c *Connection) dispatchN(f proto.Frame) {
 	c.mux.Unlock()
 
 	if ch != nil {
-
-		fmt.Println("Sending to channel")
-
-		// ch.incoming <- f
+		// Send data to channel to be processed
+		ch.incoming <- f
 	} else {
 		// We expect the method here to be ConnectionCloseOk, ChannelClose, or ChannelCloseOk
 		c.routeMethod(f.(*proto.MethodFrame))
@@ -332,8 +329,6 @@ func (c *Connection) routeMethod(mf *proto.MethodFrame) *proto.Error {
 	}
 	return nil
 }
-
-/*
 
 func (c *Connection) allocateChannel() (*Channel, error) {
 	c.mux.Lock()
@@ -381,5 +376,3 @@ func (c *Connection) closeChannel(ch *Channel, err *proto.Error) {
 func (c *Connection) Channel() (*Channel, error) {
 	return c.openChannel()
 }
-
-*/

@@ -26,7 +26,6 @@ func (ch *Channel) connectionRoute(conn *Connection, msgf proto.MessageFrame) *p
 }
 
 func (ch *Channel) startConnection() *proto.Error {
-	ch.conn.status.start = true
 	ch.Send(&proto.ConnectionStart{
 		Version:    1,
 		Mechanisms: "PLAIN",

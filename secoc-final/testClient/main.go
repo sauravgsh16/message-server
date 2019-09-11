@@ -14,9 +14,13 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	_, err := qclient.Dial("tcp://localhost:9000")
+	conn, err := qclient.Dial("tcp://localhost:9000")
+	// defer conn.Close()
 	failOnError(err, "Failed to connect to qserver")
 
+	_, err = conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	//defer ch.Close()
+
 	fmt.Println("Success")
-	// conn.Close()
 }

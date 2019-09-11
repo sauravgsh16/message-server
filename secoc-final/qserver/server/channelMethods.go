@@ -33,7 +33,7 @@ func (ch *Channel) channelOpen(m *proto.ChannelOpen) *proto.Error {
 		var classId, methodId = m.MethodIdentifier()
 		return proto.NewHardError(504, "channel already open", classId, methodId)
 	}
-	ch.Send(&proto.ChannelOpenOk{})
+	ch.Send(&proto.ChannelOpenOk{Response: "200"})
 	ch.state = CH_OPEN
 	return nil
 }

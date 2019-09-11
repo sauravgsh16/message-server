@@ -77,10 +77,11 @@ func (ch *Channel) sendClosed(msgf proto.MessageFrame) error {
 }
 
 func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
-	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
-		ch.sendMux.Lock()
-		defer ch.sendMux.Unlock()
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
 		body := mcf.GetBody()
 		clsID, _ := mcf.MethodIdentifier()
@@ -152,7 +153,7 @@ func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
 }
 
 func (ch *Channel) start() {
-	if ch.state == 0 {
+	if ch.state == 0 && ch.id == 0 {
 		ch.state = CH_OPEN
 		go ch.startConnection()
 	}
