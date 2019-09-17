@@ -15,12 +15,12 @@ func failOnError(err error, msg string) {
 
 func main() {
 	conn, err := qclient.Dial("tcp://localhost:9000")
-	defer conn.Close()
+	// defer conn.Close()
 	failOnError(err, "Failed to connect to qserver")
 
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+	// defer ch.Close()
 
 	err = ch.ExchangeDeclare(
 		"test",   // name
@@ -29,7 +29,7 @@ func main() {
 	)
 	failOnError(err, "Failed to declare exchange")
 
-	body := []byte("This is test string")
+	body := []byte("This is another test string")
 
 	err = ch.Publish(
 		"test", // name

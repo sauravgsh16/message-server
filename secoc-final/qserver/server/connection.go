@@ -80,8 +80,6 @@ func (c *Connection) openConnection() {
 	}
 	// Create channel 0 and start the connection handshake
 
-	fmt.Printf("Connection initiated, %+v\n", c.network)
-
 	c.channels[0] = NewChannel(0, c)
 	c.channels[0].start()
 	go c.handleIncoming(c.network)
@@ -145,12 +143,12 @@ func (c *Connection) handleIncoming(r io.Reader) {
 		}
 		frame, err := frames.ReadFrame()
 		if err != nil {
+			if _, ok := err.(*net.OpError); ok {
+				continue
+			}
 			c.hardClose()
 			break
 		}
-
-		fmt.Printf("%+v\n", frame)
-
 		c.handleFrame(frame)
 	}
 }

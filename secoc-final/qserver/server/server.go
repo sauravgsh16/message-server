@@ -67,8 +67,9 @@ func (s *Server) initSystemExchanges() {
 }
 
 func (s *Server) registerDefaultExchange(name string, extype uint8) {
-	_, alreadyPresent := s.exchanges[name]
-	if !alreadyPresent {
+	_, found := s.exchanges[name]
+
+	if !found {
 		ex := exchange.NewExchange(
 			name,
 			extype,

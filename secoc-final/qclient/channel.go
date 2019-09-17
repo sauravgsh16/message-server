@@ -133,12 +133,10 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 		}
 
 		// Send Body
-		bf := &proto.BodyFrame{
+		ch.outgoing <- &proto.BodyFrame{
 			ChannelID: ch.id,
 			Body:      body,
 		}
-		fmt.Printf("%+v\n", bf)
-		ch.outgoing <- bf
 
 	} else {
 		ch.outgoing <- &proto.MethodFrame{
