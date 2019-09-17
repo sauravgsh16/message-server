@@ -60,11 +60,11 @@ func (r Reader) readHeader(channel uint16, size uint32) (Frame, error) {
 		ChannelID: channel,
 	}
 
-	if err := binary.Read(r.R, binary.BigEndian, hf.Class); err != nil {
+	if err := binary.Read(r.R, binary.BigEndian, &hf.Class); err != nil {
 		return nil, err
 	}
 
-	if err := binary.Read(r.R, binary.BigEndian, hf.BodySize); err != nil {
+	if err := binary.Read(r.R, binary.BigEndian, &hf.BodySize); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (r Reader) readHeader(channel uint16, size uint32) (Frame, error) {
 func (r Reader) readBody(channel uint16, size uint32) (Frame, error) {
 	bf := &BodyFrame{
 		ChannelID: channel,
-		Body:      make([]byte, 0),
+		Body:      make([]byte, size),
 	}
 
 	if _, err := io.ReadFull(r.R, bf.Body); err != nil {

@@ -389,7 +389,7 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 		return nil
 	}
 
-	ex, _ := ch.server.exchanges[ch.currentMessage.Method.(*proto.BasicPublish).Exchange]
+	ex, _ := ch.server.getExchange(ch.currentMessage.Method.(*proto.BasicPublish).Exchange)
 
 	if ch.txMode {
 		// Add message to a List

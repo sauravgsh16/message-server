@@ -148,6 +148,9 @@ func (c *Connection) handleIncoming(r io.Reader) {
 			c.hardClose()
 			break
 		}
+
+		fmt.Printf("%+v\n", frame)
+
 		c.handleFrame(frame)
 	}
 }

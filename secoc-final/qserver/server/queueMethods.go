@@ -74,13 +74,13 @@ func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
 	}
 
 	// Check queue
-	q, found := ch.server.queues[m.Queue]
+	q, found := ch.server.getQueue(m.Queue)
 	if !found || q.Closed {
 		return proto.NewSoftError(404, fmt.Sprintf("Queue: %s - not found", m.Queue), clsID, mtdID)
 	}
 
 	// Exchange queue
-	ex, found := ch.server.exchanges[m.Exchange]
+	ex, found := ch.server.getExchange(m.Exchange)
 	if !found {
 		return proto.NewSoftError(404, "Exchange not found", clsID, mtdID)
 	}

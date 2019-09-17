@@ -107,6 +107,14 @@ func (s *Server) addExchange(ex *exchange.Exchange) error {
 	return nil
 }
 
+func (s *Server) getExchange(name string) (*exchange.Exchange, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	ex, found := s.exchanges[name]
+	return ex, found
+}
+
 func (s *Server) deleteExchange(m *proto.ExchangeDelete) (uint16, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -126,6 +134,14 @@ func (s *Server) addQueue(q *queue.Queue) error {
 	defer s.mux.Unlock()
 	s.queues[q.Name] = q
 	return nil
+}
+
+func (s *Server) getQueue(name string) (*queue.Queue, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	q, found := s.queues[name]
+	return q, found
 }
 
 func (s *Server) deleteQueue(m *proto.QueueDelete, connID int64) (uint32, uint16, error) {
@@ -188,8 +204,8 @@ func (s *Server) basicReturnMsg(msg *proto.Message, code uint16, text string) *p
 	return &proto.BasicReturn{
 		ReplyCode:  code,
 		ReplyText:  text,
-		Exchange:   msg.Method.(*proto.BasicReturn).Exchange,
-		RoutingKey: msg.Method.(*proto.BasicReturn).RoutingKey,
+		Exchange:   msg.Method.(*proto.BasicPublish).Exchange,
+		RoutingKey: msg.Method.(*proto.BasicPublish).RoutingKey,
 	}
 }
 
