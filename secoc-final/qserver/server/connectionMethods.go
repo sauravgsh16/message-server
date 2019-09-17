@@ -53,7 +53,11 @@ func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) 
 
 func (ch *Channel) connectionClose(c *Connection, m *proto.ConnectionClose) *proto.Error {
 	ch.Send(&proto.ConnectionCloseOk{})
-	c.hardClose()
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	
+	c.status.closing = true
+
 	return nil
 }
 

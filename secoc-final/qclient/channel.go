@@ -1,6 +1,7 @@
 package qclient
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -61,6 +62,7 @@ func newChannel(c *Connection, id uint16) *Channel {
 		rpc:       make(chan proto.MessageFrame),
 		consumers: CreateNewConsumers(),
 		done:      make(chan interface{}),
+		errors:    make(chan *proto.Error),
 	}
 }
 
@@ -96,6 +98,9 @@ func (ch *Channel) call(req proto.MessageFrame, resp ...proto.MessageFrame) erro
 }
 
 func (ch *Channel) send(msgf proto.MessageFrame) error {
+
+	fmt.Printf("Sending: %s\n", msgf.MethodName())
+
 	if ch.state == CH_CLOSED {
 		return ch.sendClosed(msgf)
 	}
@@ -306,6 +311,8 @@ func (ch *Channel) dispatchRpc(msgf proto.MessageFrame) *proto.Error {
 }
 
 func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
+
+	fmt.Println("Received", mf.Method.MethodName())
 
 	if msgf, ok := mf.Method.(proto.MessageContentFrame); ok {
 		ch.currentMessage = proto.NewMessage(msgf)

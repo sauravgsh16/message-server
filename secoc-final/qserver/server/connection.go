@@ -89,6 +89,11 @@ func (c *Connection) openConnection() {
 }
 
 func (c *Connection) hardClose() {
+
+	if c.status.closed {
+		return
+	}
+
 	c.network.Close()
 	c.status.closed = true
 	c.server.deleteConnection(c.id)
@@ -119,11 +124,11 @@ func (c *Connection) send(f proto.Frame) error {
 	if c.status.closed {
 		return proto.NewHardError(500, "Sending on closed channel/Connection", 0, 0)
 	}
+
 	c.mux.Lock()
 	err := c.writer.WriteFrame(f)
 	c.mux.Unlock()
-	if err != nil {
-		fmt.Println(err.Error())
+	if err != nil || c.status.closing == true {
 		go c.hardClose()
 	}
 	return err
