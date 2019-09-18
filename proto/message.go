@@ -1,28 +1,98 @@
 package proto
 
-type WireFrame struct {
-	FrameType uint8
-	Channel   uint16
-	Payload   []byte
+import (
+	"bytes"
+	"encoding/binary"
+	"errors"
+	"io"
+)
+
+type ProtocolHeader struct{}
+
+func (*ProtocolHeader) Channel() uint16 {
+	panic("Should never be called")
 }
 
-type ChannelFrame struct {
+func (*ProtocolHeader) Write(w io.Writer) (err error) {
+	_, err = w.Write([]byte{'S', 'E', 'C', 'O', 'C'})
+	return err
+}
+
+type MethodFrame struct {
 	ChannelID uint16
-	Method    MethodFrame
+	ClassID   uint16
+	MethodID  uint16
+	Method    MessageFrame
+}
+
+func (mf *MethodFrame) Channel() uint16 { return mf.ChannelID }
+
+func (mf *MethodFrame) Write(w io.Writer) error {
+	var payload bytes.Buffer
+
+	if mf.Method == nil {
+		return errors.New("Missing Method - incorrectly frame")
+	}
+
+	clsID, mtdId := mf.Method.MethodIdentifier()
+
+	if err := binary.Write(&payload, binary.BigEndian, clsID); err != nil {
+		return err
+	}
+
+	if err := binary.Write(&payload, binary.BigEndian, mtdId); err != nil {
+		return err
+	}
+
+	if err := mf.Method.Write(&payload); err != nil {
+		return err
+	}
+
+	return writeFrame(w, FrameMethod, mf.ChannelID, payload.Bytes())
 }
 
 type HeaderFrame struct {
-	Class    uint16
-	BodySize uint64
+	Class     uint16
+	ChannelID uint16
+	BodySize  uint64
+}
+
+func (hf *HeaderFrame) Channel() uint16 { return hf.ChannelID }
+
+func (hf *HeaderFrame) FrameType() byte { return 2 }
+
+func (hf *HeaderFrame) Write(w io.Writer) error {
+	var payload bytes.Buffer
+
+	if err := binary.Write(&payload, binary.BigEndian, hf.Class); err != nil {
+		return err
+	}
+
+	if err := binary.Write(&payload, binary.BigEndian, hf.BodySize); err != nil {
+		return err
+	}
+
+	return writeFrame(w, FrameHeader, hf.ChannelID, payload.Bytes())
+}
+
+type BodyFrame struct {
+	ChannelID uint16
+	Body      []byte
+}
+
+func (bf *BodyFrame) Channel() uint16 { return bf.ChannelID }
+
+func (bf *BodyFrame) Write(w io.Writer) error {
+	return writeFrame(w, FrameBody, bf.ChannelID, bf.Body)
 }
 
 type Message struct {
 	ID         int64
 	Header     *HeaderFrame
-	Payload    []*WireFrame
+	Payload    []byte
 	Exchange   string
 	RoutingKey string
-	Method     MethodContentFrame
+	Method     MessageContentFrame
 }
 
 type QueueMessage struct {
@@ -41,4 +111,45 @@ type IndexMessage struct {
 	Refs          int32
 	DeliveryCount int32
 	Persisted     bool
+}
+
+func NewMessage(mcf MessageContentFrame) *Message {
+	msg := &Message{
+		ID:      NextCnt(),
+		Payload: make([]byte, 0),
+	}
+	switch m := mcf.(type) {
+	case *BasicPublish:
+		msg.Method = m
+		msg.Exchange = m.Exchange
+		msg.RoutingKey = m.RoutingKey
+	case *BasicDeliver:
+		msg.Method = m
+		msg.Exchange = m.Exchange
+		msg.RoutingKey = m.RoutingKey
+	}
+	return msg
+}
+
+func NewTxMessage(msg *Message, qn string) *TxMessage {
+	return &TxMessage{
+		Msg:       msg,
+		QueueName: qn,
+	}
+}
+
+func NewIndexMessage(id int64, refcount int32, deliveryCount int32) *IndexMessage {
+	return &IndexMessage{
+		ID:            id,
+		Refs:          refcount,
+		DeliveryCount: deliveryCount,
+	}
+}
+
+func NewQueueMessage(id int64, deliveryCount int32, size uint32) *QueueMessage {
+	return &QueueMessage{
+		ID:            id,
+		DeliveryCount: deliveryCount,
+		MsgSize:       size,
+	}
 }

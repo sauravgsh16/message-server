@@ -32,6 +32,7 @@ func NewQueue(name string, connId int64, deleteChan chan *Queue, msgStore *store
 		deleteChan: deleteChan,
 		readyChan:  make(chan bool, 1),
 		msgStore:   msgStore,
+		ConnId:     connId,
 	}
 }
 

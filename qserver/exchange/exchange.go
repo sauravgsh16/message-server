@@ -34,10 +34,8 @@ func NewExchange(name string, extype uint8, deleteChan chan *Exchange) *Exchange
 	}
 }
 
-// NEED TO CHECK - RABBITMQ DOC
-// GETS CALLED FROM exchangeDeclare
 func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (*Exchange, *proto.Error) {
-	extype, err := exchangeNameToType(m.Type)
+	extype, err := ExchangeNameFromType(m.Type)
 	if err != nil {
 		var classId, methodId = m.MethodIdentifier()
 		return nil, proto.NewHardError(503, "Invalid exchange type", classId, methodId)
@@ -51,7 +49,7 @@ func (ex *Exchange) Close() {
 	ex.Closed = true
 }
 
-func exchangeNameToType(extype string) (uint8, error) {
+func ExchangeNameFromType(extype string) (uint8, error) {
 	switch extype {
 	case "direct":
 		return EX_DIRECT, nil

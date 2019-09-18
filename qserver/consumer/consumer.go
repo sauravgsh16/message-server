@@ -29,8 +29,8 @@ type ConsumerQueue interface {
 
 type ChannelResource interface {
 	proto.MessageResourceHolder
-	SendContent(mf proto.MethodFrame, msg *proto.Message)
-	SendMethod(mf proto.MethodFrame)
+	SendContent(mf proto.MessageContentFrame, msg *proto.Message) error
+	Send(mf proto.MessageFrame) error
 	FlowActive() bool
 	GetDeliveryTag() uint64
 }
@@ -61,7 +61,6 @@ func (c *Consumer) Stop() {
 		c.stopped = true
 	}
 }
-
 func (c *Consumer) Ping() {
 	c.stopMux.Lock()
 	defer c.stopMux.Unlock()
@@ -106,7 +105,7 @@ func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
 }
 
 func (c *Consumer) SendCancel() {
-	c.chResource.SendMethod(&proto.BasicCancel{
+	c.chResource.Send(&proto.BasicCancel{
 		ConsumerTag: c.ConsumerTag,
 		NoWait:      true,
 	})
@@ -120,9 +119,10 @@ func (c *Consumer) ConsumeImmediate(msg *proto.Message, qm *proto.QueueMessage) 
 
 	// TODO:
 	/*
-		if !c.noAck {
-			tag := c.chResource.ADDUNACKMESSAGE()
-		}
+		        // qm used here
+			if !c.noAck {
+				tag := c.chResource.ADDUNACKMESSAGE()
+			}
 	*/
 	c.chResource.SendContent(&proto.BasicDeliver{
 		ConsumerTag: c.ConsumerTag,

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/sauravgsh16/secoc-third/constant"
-	"github.com/sauravgsh16/secoc-third/secoc-final/qserver/server"
+	"github.com/sauravgsh16/secoc-third/qserver/server"
 )
 
 func handleConnection(sevr *server.Server, conn net.Conn) {

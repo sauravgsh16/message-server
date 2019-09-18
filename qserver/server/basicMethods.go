@@ -5,20 +5,26 @@ import (
 	"github.com/sauravgsh16/secoc-third/proto"
 )
 
-func (ch *Channel) basicRoute(mf proto.MethodFrame) *proto.Error {
-	switch method := mf.(type) {
+func (ch *Channel) basicRoute(msgf proto.MessageFrame) *proto.Error {
+	switch method := msgf.(type) {
+
 	case *proto.BasicConsume:
 		return ch.basicConsume(method)
+
 	case *proto.BasicCancel:
 		return ch.basicCancel(method)
+
 	case *proto.BasicPublish:
 		return ch.basicPublish(method)
+
 	case *proto.BasicAck:
 		return ch.basicAck(method)
+
 	case *proto.BasicNack:
 		return ch.basicNack(method)
+
 	default:
-		clsID, mtdID := mf.MethodIdentifier()
+		clsID, mtdID := msgf.MethodIdentifier()
 		return proto.NewHardError(540, "unable to route method frame", clsID, mtdID)
 	}
 }
@@ -49,7 +55,7 @@ func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.Error {
 	}
 
 	if !m.NoWait {
-		ch.SendMethod(&proto.BasicConsumeOk{ConsumerTag: m.ConsumerTag})
+		ch.Send(&proto.BasicConsumeOk{ConsumerTag: m.ConsumerTag})
 	}
 	return nil
 }
@@ -60,7 +66,7 @@ func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.Error {
 		return proto.NewSoftError(404, err.Error(), clsID, mtdID)
 	}
 	if !m.NoWait {
-		ch.SendMethod(&proto.BasicCancelOk{ConsumerTag: m.ConsumerTag})
+		ch.Send(&proto.BasicCancelOk{ConsumerTag: m.ConsumerTag})
 	}
 	return nil
 }

@@ -186,11 +186,7 @@ func (ms *MsgStore) Get(qm *proto.QueueMessage, mrh []proto.MessageResourceHolde
 }
 
 func calcMessageSize(msg *proto.Message) uint32 {
-	size := uint32(0)
-	for _, frame := range msg.Payload {
-		size += uint32(len(frame.Payload))
-	}
-	return size
+	return uint32(len(msg.Payload))
 }
 
 func (ms *MsgStore) handlePeriodicPersists() {

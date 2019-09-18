@@ -8,6 +8,7 @@ import (
 	"github.com/boltdb/bolt"
 
 	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/secoc-third/qserver/binding"
 	"github.com/sauravgsh16/secoc-third/qserver/exchange"
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
 	"github.com/sauravgsh16/secoc-third/qserver/store"
@@ -62,13 +63,15 @@ func (s *Server) OpenConnection(conn net.Conn) {
 // ****** PRIVATE METHODS *********
 
 func (s *Server) initSystemExchanges() {
+	s.registerDefaultExchange("", exchange.EX_DIRECT)
 	s.registerDefaultExchange("proto.DIRECT", exchange.EX_DIRECT)
 	s.registerDefaultExchange("proto.FANOUT", exchange.EX_FANOUT)
 }
 
 func (s *Server) registerDefaultExchange(name string, extype uint8) {
-	_, alreadyPresent := s.exchanges[name]
-	if !alreadyPresent {
+	_, found := s.exchanges[name]
+
+	if !found {
 		ex := exchange.NewExchange(
 			name,
 			extype,
@@ -107,6 +110,14 @@ func (s *Server) addExchange(ex *exchange.Exchange) error {
 	return nil
 }
 
+func (s *Server) getExchange(name string) (*exchange.Exchange, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	ex, found := s.exchanges[name]
+	return ex, found
+}
+
 func (s *Server) deleteExchange(m *proto.ExchangeDelete) (uint16, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -125,7 +136,26 @@ func (s *Server) addQueue(q *queue.Queue) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	s.queues[q.Name] = q
+
+	// Create new binding and register default exchange to it.
+	defaultEx := s.exchanges[""]
+	defaultBind, err := binding.NewBinding(q.Name, "", q.Name)
+	if err != nil {
+		return err
+	}
+	defaultEx.AddBinding(defaultBind, q.ConnId)
+
+	// Start Queue - to initiate consumption
+	q.Start()
 	return nil
+}
+
+func (s *Server) getQueue(name string) (*queue.Queue, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	q, found := s.queues[name]
+	return q, found
 }
 
 func (s *Server) deleteQueue(m *proto.QueueDelete, connID int64) (uint32, uint16, error) {
@@ -188,8 +218,8 @@ func (s *Server) basicReturnMsg(msg *proto.Message, code uint16, text string) *p
 	return &proto.BasicReturn{
 		ReplyCode:  code,
 		ReplyText:  text,
-		Exchange:   msg.Method.(*proto.BasicReturn).Exchange,
-		RoutingKey: msg.Method.(*proto.BasicReturn).RoutingKey,
+		Exchange:   msg.Method.(*proto.BasicPublish).Exchange,
+		RoutingKey: msg.Method.(*proto.BasicPublish).RoutingKey,
 	}
 }
 

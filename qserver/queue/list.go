@@ -3,6 +3,7 @@ package queue
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 type qData interface{}
@@ -16,6 +17,7 @@ type msg struct {
 type List struct {
 	Root *msg
 	len  int
+	mux  sync.Mutex
 }
 
 // Len of list
@@ -63,11 +65,18 @@ func (l *List) remove() error {
 
 // Append to end of list
 func (l *List) Append(d qData) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	l.append(d)
+	l.len++
 }
 
 // Remove one msg
 func (l *List) Remove() {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	if err := l.remove(); err != nil {
 		panic(err.Error())
 	}

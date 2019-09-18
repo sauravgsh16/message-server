@@ -12,7 +12,7 @@ type Delivery struct {
 	Body        []byte
 }
 
-func newDelivery(ch *Channel, mcf proto.MethodContentFrame) *Delivery {
+func newDelivery(ch *Channel, mcf proto.MessageContentFrame) *Delivery {
 	body := mcf.GetBody()
 	d := &Delivery{
 		Body: body,

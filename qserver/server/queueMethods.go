@@ -8,29 +8,36 @@ import (
 	"github.com/sauravgsh16/secoc-third/qserver/queue"
 )
 
-func (ch *Channel) queueRoute(mf proto.MethodFrame) *proto.Error {
-	switch method := mf.(type) {
+func (ch *Channel) queueRoute(msgf proto.MessageFrame) *proto.Error {
+	switch method := msgf.(type) {
+
 	case *proto.QueueDeclare:
 		return ch.queueDeclare(method)
+
 	case *proto.QueueBind:
 		return ch.queueBind(method)
+
 	case *proto.QueueUnbind:
 		return ch.queueUnbind(method)
+
 	case *proto.QueueDelete:
 		return ch.queueDelete(method)
+
+	default:
+		clsID, mtdID := msgf.MethodIdentifier()
+		return proto.NewHardError(540, "Not Implemented Queue method", clsID, mtdID)
 	}
-	clsID, mtdID := mf.MethodIdentifier()
-	return proto.NewHardError(540, "Not Implemented Queue method", clsID, mtdID)
 }
 
 func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.Error {
 	clsID, mtdID := m.MethodIdentifier()
 
-	q, ok := ch.conn.server.queues[m.Queue]
-	if ok {
+	// Check if Queue already exists
+	q, found := ch.conn.server.queues[m.Queue]
+	if found {
 		qsize := uint32(q.Len())
 		csize := q.ConsumerCount()
-		ch.SendMethod(&proto.QueueDeclareOk{
+		ch.Send(&proto.QueueDeclareOk{
 			Queue:       m.Queue,
 			MessageCnt:  qsize,
 			ConsumerCnt: csize,
@@ -48,7 +55,7 @@ func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.Error {
 	}
 	ch.usedQueueName = q.Name
 	if !m.NoWait {
-		ch.SendMethod(&proto.QueueDeclareOk{
+		ch.Send(&proto.QueueDeclareOk{
 			Queue:       q.Name,
 			MessageCnt:  uint32(0),
 			ConsumerCnt: uint32(0),
@@ -68,13 +75,13 @@ func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
 	}
 
 	// Check queue
-	q, found := ch.server.queues[m.Queue]
+	q, found := ch.server.getQueue(m.Queue)
 	if !found || q.Closed {
 		return proto.NewSoftError(404, fmt.Sprintf("Queue: %s - not found", m.Queue), clsID, mtdID)
 	}
 
 	// Exchange queue
-	ex, found := ch.server.exchanges[m.Exchange]
+	ex, found := ch.server.getExchange(m.Exchange)
 	if !found {
 		return proto.NewSoftError(404, "Exchange not found", clsID, mtdID)
 	}
@@ -96,7 +103,7 @@ func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
 	}
 
 	if !m.NoWait {
-		ch.SendMethod(&proto.QueueBindOk{})
+		ch.Send(&proto.QueueBindOk{})
 	}
 	return nil
 }
@@ -137,7 +144,7 @@ func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.Error {
 		return proto.NewSoftError(500, err.Error(), clsID, mtdID)
 	}
 
-	ch.SendMethod(&proto.QueueUnbindOk{})
+	ch.Send(&proto.QueueUnbindOk{})
 	return nil
 }
 
@@ -157,7 +164,7 @@ func (ch *Channel) queueDelete(m *proto.QueueDelete) *proto.Error {
 	}
 
 	if !m.NoWait {
-		ch.SendMethod(&proto.QueueDeleteOk{MessageCnt: msgPurged})
+		ch.Send(&proto.QueueDeleteOk{MessageCnt: msgPurged})
 	}
 	return nil
 }

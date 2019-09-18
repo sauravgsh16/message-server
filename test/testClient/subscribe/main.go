@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
-	"github.com/sauravgsh16/secoc-third/secoc-final/qclient"
+	"github.com/sauravgsh16/secoc-third/qclient"
 )
 
 func failOnError(err error, msg string) {
@@ -39,4 +40,15 @@ func main() {
 		false,   // noWait
 	)
 
+	msgs, err := ch.Consume(
+		q.Queue, // Queue Name
+		"c1",    // Consumer Name
+		true,    // noAck
+		false,   // noWait
+	)
+	failOnError(err, "Failed to register a consumer")
+
+	for d := range msgs {
+		fmt.Printf("%s\n", d.Body)
+	}
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sauravgsh16/secoc-third/secoc-final/qclient"
+	"github.com/sauravgsh16/secoc-third/qclient"
 )
 
 func failOnError(err error, msg string) {
@@ -29,7 +29,7 @@ func main() {
 	)
 	failOnError(err, "Failed to declare exchange")
 
-	body := []byte("This is another test string")
+	body := []byte("This is a test string")
 
 	err = ch.Publish(
 		"test", // name

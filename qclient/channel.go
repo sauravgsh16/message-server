@@ -1,8 +1,7 @@
 package qclient
 
 import (
-	"bytes"
-	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -34,9 +33,9 @@ func (c *confirms) AddListener(ch chan Confirmation) {}
 type Channel struct {
 	id             uint16
 	destructor     sync.Once
-	incoming       chan *proto.WireFrame
-	outgoing       chan *proto.WireFrame
-	rpc            chan *proto.MethodFrame
+	incoming       chan proto.Frame
+	outgoing       chan proto.Frame
+	rpc            chan proto.MessageFrame
 	conn           *Connection
 	consumers      *Consumers
 	sendMux        sync.Mutex
@@ -49,23 +48,25 @@ type Channel struct {
 	closes         []chan *proto.Error
 	returns        []chan Return
 	noNotify       bool
-	body           []byte
 	currentMessage *proto.Message
-	bodyMf         proto.MethodContentFrame 
+	bodyMf         proto.MessageContentFrame
+	done           chan interface{}
 }
 
 func newChannel(c *Connection, id uint16) *Channel {
 	return &Channel{
 		id:        id,
 		conn:      c,
-		incoming:  make(chan *proto.WireFrame),
+		incoming:  make(chan proto.Frame),
 		outgoing:  c.outgoing,
-		rpc:       make(chan *proto.MethodFrame),
+		rpc:       make(chan proto.MessageFrame),
 		consumers: CreateNewConsumers(),
+		done:      make(chan interface{}),
+		errors:    make(chan *proto.Error),
 	}
 }
 
-func (ch *Channel) call(req proto.MethodFrame, resp ...proto.MethodFrame) error {
+func (ch *Channel) call(req proto.MessageFrame, resp ...proto.MessageFrame) error {
 	if err := ch.send(req); err != nil {
 		return err
 	}
@@ -96,99 +97,69 @@ func (ch *Channel) call(req proto.MethodFrame, resp ...proto.MethodFrame) error 
 	return nil
 }
 
-func (ch *Channel) send(mf proto.MethodFrame) error {
+func (ch *Channel) send(msgf proto.MessageFrame) error {
+
+	fmt.Printf("Sending: %s\n", msgf.MethodName())
+
 	if ch.state == CH_CLOSED {
-		return ch.sendClosed(mf)
+		return ch.sendClosed(msgf)
 	}
-	if content, ok := mf.(proto.MethodContentFrame); ok {
-		if err := ch.updateCurrentMessage(content); err != nil {
-			return errors.New(err.Error())
-		}
-		ch.sendContent(ch.currentMessage, mf)
-	}
-	return ch.sendMethod(mf)
+
+	return ch.sendOpen(msgf)
 }
 
-func (ch *Channel) updateCurrentMessage(mcf proto.MethodContentFrame) *proto.Error {
-	clsID, mtdID := mcf.MethodIdentifier()
-	body := mcf.GetBody()
-	if ch.currentMessage == nil {
-		return proto.NewSoftError(500, "Unexpected Message update", clsID, mtdID)
-	}
-	ch.currentMessage.Header = &proto.HeaderFrame{
-		Class:    clsID,
-		BodySize: uint64(len(body)),
-	}
+func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 
-	// TODO:
-	// BODY TO BE CHUNKED INTO AGREED MAX FRAME SIZE
-	// SINCE CONFIGURATION HANDSHAKE IS NOT YET IMPLEMENTED, FRAME SIZE WILL
-	// BE THE SIZE OF BODY.
-	ch.currentMessage.Payload = append(ch.currentMessage.Payload,
-		&proto.WireFrame{
-			FrameType: proto.FrameBody,
-			Channel:   ch.id,
-			Payload:   body,
-		})
+	ch.sendMux.Lock()
+	defer ch.sendMux.Unlock()
+
+	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
+
+		body := mcf.GetBody()
+		clsID, _ := mcf.MethodIdentifier()
+		size := uint64(len(body))
+
+		// Send Method
+		ch.outgoing <- &proto.MethodFrame{
+			ChannelID: ch.id,
+			Method:    mcf,
+		}
+
+		// Send Header
+		ch.outgoing <- &proto.HeaderFrame{
+			Class:     clsID,
+			ChannelID: ch.id,
+			BodySize:  size,
+		}
+
+		// Send Body
+		ch.outgoing <- &proto.BodyFrame{
+			ChannelID: ch.id,
+			Body:      body,
+		}
+
+	} else {
+		ch.outgoing <- &proto.MethodFrame{
+			ChannelID: ch.id,
+			Method:    msgf,
+		}
+	}
 	return nil
 }
 
-func (ch *Channel) sendClosed(mf proto.MethodFrame) error {
-	if _, ok := mf.(*proto.ChannelCloseOk); ok {
-		ch.conn.send(&proto.ChannelFrame{
+func (ch *Channel) sendClosed(msgf proto.MessageFrame) error {
+	if _, ok := msgf.(*proto.ChannelCloseOk); ok {
+		ch.conn.send(&proto.MethodFrame{
 			ChannelID: ch.id,
-			Method:    mf,
+			Method:    msgf,
 		})
 	}
 	return ErrClosed
 }
 
-func (ch *Channel) sendMethod(mf proto.MethodFrame) error {
-	ch.sendMux.Lock()
-	defer ch.sendMux.Unlock()
-
-	if err := ch.conn.send(&proto.ChannelFrame{
-		ChannelID: ch.id,
-		Method:    mf,
-	}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ch *Channel) sendContent(msg *proto.Message, mf proto.MethodFrame) error {
-	ch.sendMux.Lock()
-	defer ch.sendMux.Unlock()
-
-	buf := bytes.NewBuffer(make([]byte, 0))
-
-	// Write Headers
-	proto.WriteShort(buf, msg.Header.Class)
-	proto.WriteLongLong(buf, msg.Header.BodySize)
-
-	// Send method
-	if err := ch.sendMethod(mf); err != nil {
-		return err
-	}
-
-	// Send Header
-	ch.outgoing <- &proto.WireFrame{
-		FrameType: uint8(proto.FrameHeader),
-		Channel:   ch.id,
-		Payload:   buf.Bytes(),
-	}
-
-	// Send Body
-	for _, body := range msg.Payload {
-		body.Channel = ch.id
-		ch.outgoing <- body
-	}
-	return nil
-}
-
 func (ch *Channel) sendError(err *proto.Error) {
 	if err.Soft {
-		ch.sendMethod(&proto.ChannelClose{
+		ch.send(&proto.ChannelClose{
 			ReplyCode: err.Code,
 			ReplyText: err.Msg,
 			ClassId:   err.Class,
@@ -201,7 +172,7 @@ func (ch *Channel) sendError(err *proto.Error) {
 
 func (ch *Channel) open() error {
 	ch.startReceiver()
-	return ch.call(&proto.ChannelOpen{}, &proto.ChannelOpenOk{})
+	return ch.call(&proto.ChannelOpen{}, &proto.ChannelOpenOk{Response: "200"})
 }
 
 func (ch *Channel) shutdown(err *proto.Error) {
@@ -231,16 +202,16 @@ func (ch *Channel) shutdown(err *proto.Error) {
 			close(c)
 		}
 
-		for _, c := range ch.flows {
-			close(c)
+		for _, f := range ch.flows {
+			close(f)
 		}
 
-		for _, c := range ch.returns {
-			close(c)
+		for _, r := range ch.returns {
+			close(r)
 		}
 
-		for _, c := range ch.cancels {
-			close(c)
+		for _, ca := range ch.cancels {
+			close(ca)
 		}
 
 		ch.closes = nil
@@ -262,35 +233,42 @@ func (ch *Channel) startReceiver() {
 				break
 			}
 			var err *proto.Error
-			wf := <-ch.incoming
 
-			switch wf.FrameType {
-			case uint8(proto.FrameMethod):
-				err = ch.handleMethod(wf)
+			select {
+			case <-ch.done:
+				break
 
-			case uint8(proto.FrameHeader):
-				if ch.state != CH_CLOSING {
-					err = ch.handleHeader(wf)
+			case frame := <-ch.incoming:
+
+				switch m := frame.(type) {
+
+				case *proto.MethodFrame:
+					err = ch.handleMethod(m)
+
+				case *proto.HeaderFrame:
+					if ch.state != CH_CLOSING {
+						err = ch.handleHeader(m)
+					}
+
+				case *proto.BodyFrame:
+					if ch.state != CH_CLOSING {
+						err = ch.handleBody(m)
+					}
+
+				default:
+					err = proto.NewHardError(500, "Unknown frame type", 0, 0)
 				}
-
-			case uint8(proto.FrameBody):
-				if ch.state != CH_CLOSING {
-					err = ch.handleBody(wf)
+				if err != nil {
+					ch.sendError(err)
 				}
-
-			default:
-				err = proto.NewHardError(500, "Unknown frame type", 0, 0)
-			}
-			if err != nil {
-				ch.sendError(err)
 			}
 		}
 	}()
 }
 
-func (ch *Channel) dispatchRpc(mf proto.MethodFrame) *proto.Error {
+func (ch *Channel) dispatchRpc(msgf proto.MessageFrame) *proto.Error {
 
-	switch m := mf.(type) {
+	switch m := msgf.(type) {
 
 	case *proto.ChannelClose:
 		ch.sendMux.Lock()
@@ -327,32 +305,26 @@ func (ch *Channel) dispatchRpc(mf proto.MethodFrame) *proto.Error {
 		ch.consumers.send(m.ConsumerTag, newDelivery(ch, m))
 
 	default:
-		ch.rpc <- &mf
+		ch.rpc <- msgf
 	}
 
 	return nil
 }
 
-func (ch *Channel) handleMethod(wf *proto.WireFrame) *proto.Error {
-	r := bytes.NewReader(wf.Payload)
+func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 
-	mf, err := proto.ReadMethod(r)
-	if err != nil {
-		pErr := proto.NewHardError(500, err.Error(), 0, 0)
-		return pErr
+	fmt.Println("Received", mf.Method.MethodName())
+
+	if msgf, ok := mf.Method.(proto.MessageContentFrame); ok {
+		ch.currentMessage = proto.NewMessage(msgf)
+		ch.bodyMf = msgf
 	}
 
-	if content, ok := mf.(proto.MethodContentFrame); ok {
-		ch.body = make([]byte, 0)
-		ch.currentMessage = proto.NewMessage(content)
-		ch.bodyMf = content
-	} else {
-		ch.dispatchRpc(mf)
-	}
+	ch.dispatchRpc(mf.Method)
 	return nil
 }
 
-func (ch *Channel) handleHeader(wf *proto.WireFrame) *proto.Error {
+func (ch *Channel) handleHeader(hf *proto.HeaderFrame) *proto.Error {
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "Unexpected header frame. No current message set", 0, 0)
 	}
@@ -361,16 +333,11 @@ func (ch *Channel) handleHeader(wf *proto.WireFrame) *proto.Error {
 		return proto.NewSoftError(500, "Already seen header", 0, 0)
 	}
 
-	hf := &proto.HeaderFrame{}
-	if err := hf.Read(bytes.NewReader(wf.Payload)); err != nil {
-		return proto.NewHardError(500, "Error reading header", 0, 0)
-	}
-
 	ch.currentMessage.Header = hf
 	return nil
 }
 
-func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
+func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 	if ch.currentMessage == nil {
 		return proto.NewSoftError(500, "Unexpected Body frame. No current message set", 0, 0)
 	}
@@ -379,25 +346,19 @@ func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
 		return proto.NewSoftError(500, "Unexpected body frame. Header not set", 0, 0)
 	}
 
-	ch.currentMessage.Payload = append(ch.currentMessage.Payload, wf)
+	ch.currentMessage.Payload = append(ch.currentMessage.Payload, bf.Body...)
 
-	size := uint64(0)
-	for _, b := range ch.currentMessage.Payload {
-		size += uint64(len(b.Payload))
-	}
-
+	size := uint64(len(ch.currentMessage.Payload))
+	// Message yet to complete
 	if size < ch.currentMessage.Header.BodySize {
-		// We still need to wait for additional bodyframes
 		return nil
 	}
 
-	for _, wf := range ch.currentMessage.Payload {
-		ch.body = append(ch.body, wf.Payload...)
-	}
+	// Set MessageFrame's body with all content recieved
+	ch.bodyMf.SetBody(ch.currentMessage.Payload)
 
 	var err *proto.Error
 
-	ch.bodyMf.SetBody(ch.body)
 	if err := ch.dispatchRpc(ch.bodyMf); err != nil {
 		err = proto.NewSoftError(500, "Unable to dispatch method content frame", 0, 0)
 	}
@@ -407,17 +368,18 @@ func (ch *Channel) handleBody(wf *proto.WireFrame) *proto.Error {
 }
 
 func (ch *Channel) resetMessages() {
-	ch.body = nil
 	ch.bodyMf = nil
 	ch.currentMessage = nil
 }
 
 func (ch *Channel) Close() error {
-	defer ch.conn.closeChannel(ch, nil)
-	return ch.call(
+	err := ch.call(
 		&proto.ChannelClose{ReplyCode: 200},
 		&proto.ChannelCloseOk{},
 	)
+	ch.done <- struct{}{}
+	ch.conn.closeChannel(ch, nil)
+	return err
 }
 
 func (ch *Channel) Flow(active bool) error {

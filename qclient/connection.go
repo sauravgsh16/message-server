@@ -1,8 +1,9 @@
 package qclient
 
 import (
-	"bytes"
+	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -39,14 +40,13 @@ type Connection struct {
 	mux        sync.Mutex
 	conn       io.ReadWriteCloser
 	channels   map[uint16]*Channel
-	outgoing   chan *proto.WireFrame
-	incoming   chan *proto.MethodFrame
+	outgoing   chan proto.Frame
+	incoming   chan proto.MessageFrame
 	status     ConnectionStatus
 	statusMux  sync.RWMutex
 	errors     chan *proto.Error
 	allocator  *allocate.Allocator
-	version    byte
-	mechanisms string
+	writer     *proto.Writer
 }
 
 func Dial(url string) (*Connection, error) {
@@ -78,13 +78,14 @@ func Open(conn io.ReadWriteCloser) (*Connection, error) {
 	c := &Connection{
 		conn:     conn,
 		channels: make(map[uint16]*Channel),
-		outgoing: make(chan *proto.WireFrame, 100),
-		incoming: make(chan *proto.MethodFrame),
+		outgoing: make(chan proto.Frame),
+		incoming: make(chan proto.MessageFrame),
 		errors:   make(chan *proto.Error, 1),
 		status:   ConnectionStatus{},
+		writer:   &proto.Writer{W: bufio.NewWriter(conn)},
 	}
-	c.handleOutgoing()
-	go c.handleIncoming()
+	go c.handleOutgoing()
+	go c.handleIncoming(c.conn)
 	return c, c.open()
 }
 
@@ -100,41 +101,37 @@ func (c *Connection) Close() error {
 		return ErrClosed
 	}
 
-	defer c.hardClose(nil)
-	return c.call(
+	err := c.call(
 		&proto.ConnectionClose{
 			ReplyCode: 200,
 			ReplyText: "Bye",
 		},
 		&proto.ConnectionCloseOk{},
 	)
+	c.hardClose(nil)
+	return err
 }
 
-func (c *Connection) send(cf *proto.ChannelFrame) error {
-	if c.IsClosed() {
-		return ErrClosed
+func (c *Connection) send(f proto.Frame) error {
+	if c.status.closed {
+		return proto.NewHardError(500, "Sending on closed channel/Connection", 0, 0)
 	}
-
-	buf := bytes.NewBuffer([]byte{})
-	c.sendMux.Lock()
-	err := cf.Method.Write(buf)
-	c.sendMux.Unlock()
-
+	c.mux.Lock()
+	err := c.writer.WriteFrame(f)
+	c.mux.Unlock()
 	if err != nil {
 		pErr := proto.NewHardError(500, err.Error(), 0, 0)
 		go c.hardClose(pErr)
 	}
-	c.outgoing <- &proto.WireFrame{
-		FrameType: uint8(proto.FrameMethod),
-		Channel:   cf.ChannelID,
-		Payload:   buf.Bytes(),
-	}
 	return err
 }
 
-func (c *Connection) call(req proto.MethodFrame, resp ...proto.MethodFrame) error {
+func (c *Connection) call(req proto.MessageFrame, resp ...proto.MessageFrame) error {
 	if req != nil {
-		if err := c.send(&proto.ChannelFrame{ChannelID: uint16(0), Method: req}); err != nil {
+
+		fmt.Println("Sending", req.MethodName())
+
+		if err := c.send(&proto.MethodFrame{ChannelID: uint16(0), Method: req}); err != nil {
 			return err
 		}
 	}
@@ -148,25 +145,24 @@ func (c *Connection) call(req proto.MethodFrame, resp ...proto.MethodFrame) erro
 	case msg := <-c.incoming:
 		// We try to match the 'res' - result types
 		for _, result := range resp {
+
 			if reflect.TypeOf(msg) == reflect.TypeOf(result) {
 				// we updates res with the data in result
 				// Thus making, *result = *msg
 				vres := reflect.ValueOf(result).Elem()
 				vmsg := reflect.ValueOf(msg).Elem()
 				vres.Set(vmsg)
+
 				return nil
 			}
 		}
+
 		return ErrInvalidCommand
 	}
 }
 
 func (c *Connection) open() error {
-	header := &proto.ChannelFrame{
-		ChannelID: uint16(0),
-		Method:    &proto.ProtocolHeader{},
-	}
-	if err := c.send(header); err != nil {
+	if err := c.send(&proto.ProtocolHeader{}); err != nil {
 		return err
 	}
 
@@ -179,14 +175,12 @@ func (c *Connection) openStart() error {
 	if err := c.call(nil, start); err != nil {
 		return err
 	}
-	c.version = start.Version
-	c.mechanisms = start.Mechanisms
 
 	startOk := &proto.ConnectionStartOk{
-		Mechanism: c.mechanisms,
+		Mechanism: start.Mechanisms,
 		Response:  "Authenticated",
 	}
-	if err := c.send(&proto.ChannelFrame{ChannelID: uint16(0), Method: startOk}); err != nil {
+	if err := c.send(&proto.MethodFrame{ChannelID: uint16(0), Method: startOk}); err != nil {
 		return err
 	}
 	return c.openHost()
@@ -244,91 +238,95 @@ func (c *Connection) closeWithErr(err *proto.Error) {
 	}, &proto.ConnectionCloseOk{})
 }
 
-func (c *Connection) handleIncoming() {
+func (c *Connection) handleIncoming(r io.Reader) {
+	buf := bufio.NewReader(r)
+	frames := &proto.Reader{R: buf}
+
 	for {
 		if c.status.closed {
 			break
 		}
-		frame, err := proto.ReadFrame(c.conn)
-		if err != nil && err != io.EOF {
+		frame, err := frames.ReadFrame()
+		if err != nil {
 			pErr := proto.NewHardError(500, err.Error(), 0, 0)
 			c.hardClose(pErr)
 			break
 		}
-		c.handleFrame(frame)
+		if frame != nil {
+			c.handleFrame(frame)
+		}
 	}
 }
 
 func (c *Connection) handleOutgoing() {
-	go func() {
-		for {
-			if c.IsClosed() {
-				break
-			}
-			frame := <-c.outgoing
-			proto.WriteFrame(c.conn, frame)
+	for {
+		if c.status.closed {
+			break
 		}
-	}()
-}
-
-func (c *Connection) handleFrame(wf *proto.WireFrame) {
-	if wf.Channel == 0 {
-		c.dispatch0(wf)
-	} else {
-		c.dispatchN(wf)
+		frame := <-c.outgoing
+		c.send(frame)
 	}
 }
 
-func (c *Connection) dispatch0(wf *proto.WireFrame) {
-	switch {
-	case wf.FrameType == uint8(proto.FrameMethod):
-		c.routeMethod(wf)
+func (c *Connection) handleFrame(f proto.Frame) {
+	if f.Channel() == 0 {
+		c.dispatch0(f)
+	} else {
+		c.dispatchN(f)
+	}
+}
+
+func (c *Connection) dispatch0(f proto.Frame) {
+	switch mf := f.(type) {
+
+	case *proto.MethodFrame:
+		c.routeMethod(mf)
+
 	default:
 		c.closeWithErr(ErrUnexpectedFrame)
 	}
 }
 
-func (c *Connection) dispatchN(wf *proto.WireFrame) {
+func (c *Connection) dispatchN(f proto.Frame) {
 	c.mux.Lock()
-	ch := c.channels[wf.Channel]
+	ch := c.channels[f.Channel()]
 	c.mux.Unlock()
 
 	if ch != nil {
-		ch.incoming <- wf
+		// Send data to channel to be processed
+		ch.incoming <- f
 	} else {
 		// We expect the method here to be ConnectionCloseOk, ChannelClose, or ChannelCloseOk
-		c.routeMethod(wf)
+		c.routeMethod(f.(*proto.MethodFrame))
 	}
 }
 
-func (c *Connection) routeMethod(wf *proto.WireFrame) *proto.Error {
-	r := bytes.NewReader(wf.Payload)
+func (c *Connection) routeMethod(mf *proto.MethodFrame) *proto.Error {
 
-	mf, err := proto.ReadMethod(r)
-	if err != nil {
-		return proto.NewHardError(500, err.Error(), 0, 0)
-	}
+	fmt.Println("Received", mf.Method.MethodName())
 
-	clsID, mtdID := mf.MethodIdentifier()
+	clsID, mtdID := mf.Method.MethodIdentifier()
+
 	switch clsID {
 	case 10:
-		switch mtdID {
-		case 30: // ConnectionClose
-			c.send(&proto.ChannelFrame{
+		switch method := mf.Method.(type) {
+
+		case *proto.ConnectionClose:
+			c.send(&proto.MethodFrame{
 				ChannelID: uint16(0),
 				Method:    &proto.ConnectionCloseOk{},
 			})
 		default:
-			c.incoming <- &mf
+			c.incoming <- method
 		}
 	case 20:
-		switch mtdID {
-		case 30: // ChannelClose
-			c.send(&proto.ChannelFrame{
-				ChannelID: uint16(wf.Channel),
+		switch mf.Method.(type) {
+		case *proto.ChannelClose:
+			c.send(&proto.MethodFrame{
+				ChannelID: uint16(mf.ChannelID),
 				Method:    &proto.ChannelCloseOk{},
 			})
-		case 31:
+		case *proto.ChannelCloseOk:
 			// Case ChannelCloseOk, since channel already closed, we ignore.
 		default:
 			// Unexpected method

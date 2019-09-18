@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"errors"
@@ -8,17 +9,47 @@ import (
 	"io"
 )
 
-func WriteFrame(w io.Writer, wf *WireFrame) {
-	bs := make([]byte, 0, 7+len(wf.Payload)+2)
+type Writer struct {
+	W io.Writer
+}
+
+func (w Writer) WriteFrame(f Frame) error {
+	if err := f.Write(w.W); err != nil {
+		return err
+	}
+
+	if buf, ok := w.W.(*bufio.Writer); ok {
+		if err := buf.Flush(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeFrame(w io.Writer, fType uint8, channel uint16, payload []byte) error {
+	bs := make([]byte, 0, 7+len(payload)+2)
 	buf := bytes.NewBuffer(bs)
 
-	WriteOctet(buf, wf.FrameType)
-	WriteShort(buf, wf.Channel)
-	WriteLongStr(buf, fmt.Sprintf("%s", wf.Payload))
+	if err := WriteOctet(buf, fType); err != nil {
+		return err
+	}
 
-	WriteFrameEnd(buf)
+	if err := WriteShort(buf, channel); err != nil {
+		return err
+	}
 
-	binary.Write(w, binary.LittleEndian, buf.Bytes())
+	if err := WriteLongStr(buf, fmt.Sprintf("%s", payload)); err != nil {
+		return err
+	}
+
+	if err := WriteFrameEnd(buf); err != nil {
+		return err
+	}
+
+	if err := binary.Write(w, binary.LittleEndian, buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func WriteFrameEnd(w io.Writer) error {
@@ -46,34 +77,27 @@ func WriteByte(w io.Writer, b byte) error {
 }
 
 func WriteShortStr(w io.Writer, s string) error {
-	if len(s) > int(uint8(255)) {
-		return errors.New("expected short string: String too long")
-	}
+	b := []byte(s)
 
-	if err := binary.Write(w, binary.BigEndian, byte(len(s))); err != nil {
+	length := uint8(len(b))
+
+	if err := binary.Write(w, binary.BigEndian, length); err != nil {
 		return errors.New("could not write byte: " + err.Error())
 	}
-	return binary.Write(w, binary.BigEndian, s)
-}
-
-func WriteLongStr(w io.Writer, s string) error {
-	if err := binary.Write(w, binary.BigEndian, uint32(len(s))); err != nil {
-		return err
-	}
-	if err := binary.Write(w, binary.BigEndian, s); err != nil {
+	if _, err := w.Write(b[:length]); err != nil {
 		return err
 	}
 	return nil
 }
 
-func WriteMethodIdentifier(w io.Writer, mf MethodFrame) error {
-	classID, methodID := mf.MethodIdentifier()
+func WriteLongStr(w io.Writer, s string) error {
+	b := []byte(s)
 
-	if err := binary.Write(w, binary.BigEndian, classID); err != nil {
+	length := uint32(len(s))
+	if err := binary.Write(w, binary.BigEndian, length); err != nil {
 		return err
 	}
-
-	if err := binary.Write(w, binary.BigEndian, methodID); err != nil {
+	if _, err := w.Write(b[:length]); err != nil {
 		return err
 	}
 	return nil
