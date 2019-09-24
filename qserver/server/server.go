@@ -49,8 +49,8 @@ func NewServer(dbFilePath, msgStoreFilePath string) *Server {
 
 	s.initSystemExchanges()
 
-	go s.deleteExchangeMonitor()
-	go s.deleteQueueMonitor()
+	s.monitorExDelete()
+	s.monitorQDelete()
 	return s
 }
 
@@ -60,12 +60,14 @@ func (s *Server) OpenConnection(conn net.Conn) {
 	c.openConnection()
 }
 
-// ****** PRIVATE METHODS *********
-
 func (s *Server) initSystemExchanges() {
 	s.registerDefaultExchange("", exchange.EX_DIRECT)
-	s.registerDefaultExchange("proto.DIRECT", exchange.EX_DIRECT)
-	s.registerDefaultExchange("proto.FANOUT", exchange.EX_FANOUT)
+
+	/*
+		Not being used - as of now
+		s.registerDefaultExchange("proto.DIRECT", exchange.EX_DIRECT)
+		s.registerDefaultExchange("proto.FANOUT", exchange.EX_FANOUT)
+	*/
 }
 
 func (s *Server) registerDefaultExchange(name string, extype uint8) {
@@ -83,24 +85,29 @@ func (s *Server) registerDefaultExchange(name string, extype uint8) {
 	}
 }
 
-func (s *Server) deleteExchangeMonitor() {
-	for e := range s.exchangeDeleter {
-		exDel := &proto.ExchangeDelete{
-			Exchange: e.Name,
-			NoWait:   true,
+func (s *Server) monitorExDelete() {
+	go func() {
+		for e := range s.exchangeDeleter {
+			exDel := &proto.ExchangeDelete{
+				Exchange: e.Name,
+				NoWait:   true,
+			}
+			s.deleteExchange(exDel)
 		}
-		s.deleteExchange(exDel)
-	}
+	}()
+
 }
 
-func (s *Server) deleteQueueMonitor() {
-	for q := range s.queueDeleter {
-		qDel := &proto.QueueDelete{
-			Queue:  q.Name,
-			NoWait: true,
+func (s *Server) monitorQDelete() {
+	go func() {
+		for q := range s.queueDeleter {
+			qDel := &proto.QueueDelete{
+				Queue:  q.Name,
+				NoWait: true,
+			}
+			s.deleteQueue(qDel, -1)
 		}
-		s.deleteQueue(qDel, -1)
-	}
+	}()
 }
 
 func (s *Server) addExchange(ex *exchange.Exchange) error {
@@ -126,6 +133,7 @@ func (s *Server) deleteExchange(m *proto.ExchangeDelete) (uint16, error) {
 	if !ok {
 		return 404, fmt.Errorf("Exchange: %s - not found", m.Exchange)
 	}
+
 	// Close everything associated with the exchange
 	ex.Close()
 	delete(s.exchanges, m.Exchange)
@@ -159,7 +167,6 @@ func (s *Server) getQueue(name string) (*queue.Queue, bool) {
 }
 
 func (s *Server) deleteQueue(m *proto.QueueDelete, connID int64) (uint32, uint16, error) {
-
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -239,16 +246,17 @@ func (s *Server) publish(ex *exchange.Exchange, msg *proto.Message) (*proto.Basi
 	}
 
 	// Add message and queue to message store.
-	mapQueueWithQueueMessages, errObj := s.msgStore.AddMessage(msg, queues)
+	qQueueMsgMap, errObj := s.msgStore.AddMessage(msg, queues)
 	if errObj != nil {
-		clsID, mtdID := msg.Method.MethodIdentifier()
+		clsID, mtdID := msg.Method.Identifier()
 		return nil, proto.NewSoftError(500, errObj.Error(), clsID, mtdID)
 	}
 
 	if msg.Method.(*proto.BasicPublish).Immediate {
-		return s.consumeMsgImmediate(msg, queues, mapQueueWithQueueMessages)
+		return s.consumeMsgImmediate(msg, queues, qQueueMsgMap)
 	}
-	s.addMsgForConsumption(msg, queues, mapQueueWithQueueMessages)
+
+	s.addMsgForConsumption(msg, queues, qQueueMsgMap)
 	return nil, nil
 }
 
@@ -283,7 +291,7 @@ func (s *Server) addMsgForConsumption(msg *proto.Message, queues []string, qmMap
 			q, found := s.queues[queueName]
 			if !found || !q.Add(qm) {
 				// Need to remove queue reference from msg store
-				// particular queue message
+				// particularly queue message
 				mrh := make([]proto.MessageResourceHolder, 0)
 				s.msgStore.RemoveRef(qm, queueName, mrh)
 			}

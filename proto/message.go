@@ -34,7 +34,7 @@ func (mf *MethodFrame) Write(w io.Writer) error {
 		return errors.New("Missing Method - incorrectly frame")
 	}
 
-	clsID, mtdId := mf.Method.MethodIdentifier()
+	clsID, mtdId := mf.Method.Identifier()
 
 	if err := binary.Write(&payload, binary.BigEndian, clsID); err != nil {
 		return err

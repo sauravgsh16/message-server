@@ -31,26 +31,26 @@ func (c *confirms) AddListener(ch chan Confirmation) {}
 // *****************************************
 
 type Channel struct {
-	id             uint16
-	destructor     sync.Once
-	incoming       chan proto.Frame
-	outgoing       chan proto.Frame
-	rpc            chan proto.MessageFrame
-	conn           *Connection
-	consumers      *Consumers
-	sendMux        sync.Mutex
-	notifyMux      sync.Mutex
-	state          uint8
-	errors         chan *proto.Error
-	confirms       *confirms
-	flows          []chan bool
-	cancels        []chan string
-	closes         []chan *proto.Error
-	returns        []chan Return
-	noNotify       bool
-	currentMessage *proto.Message
-	bodyMf         proto.MessageContentFrame
-	done           chan interface{}
+	id         uint16
+	destructor sync.Once
+	incoming   chan proto.Frame
+	outgoing   chan proto.Frame
+	rpc        chan proto.MessageFrame
+	conn       *Connection
+	consumers  *Consumers
+	sendMux    sync.Mutex
+	notifyMux  sync.Mutex
+	state      uint8
+	errors     chan *proto.Error
+	confirms   *confirms
+	flows      []chan bool
+	cancels    []chan string
+	closes     []chan *proto.Error
+	returns    []chan Return
+	noNotify   bool
+	currentMsg *proto.Message
+	bodyMf     proto.MessageContentFrame
+	done       chan interface{}
 }
 
 func newChannel(c *Connection, id uint16) *Channel {
@@ -116,7 +116,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
 		body := mcf.GetBody()
-		clsID, _ := mcf.MethodIdentifier()
+		clsID, _ := mcf.Identifier()
 		size := uint64(len(body))
 
 		// Send Method
@@ -316,7 +316,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 	fmt.Println("Received", mf.Method.MethodName())
 
 	if msgf, ok := mf.Method.(proto.MessageContentFrame); ok {
-		ch.currentMessage = proto.NewMessage(msgf)
+		ch.currentMsg = proto.NewMessage(msgf)
 		ch.bodyMf = msgf
 	}
 
@@ -325,37 +325,37 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 }
 
 func (ch *Channel) handleHeader(hf *proto.HeaderFrame) *proto.Error {
-	if ch.currentMessage == nil {
+	if ch.currentMsg == nil {
 		return proto.NewSoftError(500, "Unexpected header frame. No current message set", 0, 0)
 	}
 
-	if ch.currentMessage.Header != nil {
+	if ch.currentMsg.Header != nil {
 		return proto.NewSoftError(500, "Already seen header", 0, 0)
 	}
 
-	ch.currentMessage.Header = hf
+	ch.currentMsg.Header = hf
 	return nil
 }
 
 func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
-	if ch.currentMessage == nil {
+	if ch.currentMsg == nil {
 		return proto.NewSoftError(500, "Unexpected Body frame. No current message set", 0, 0)
 	}
 
-	if ch.currentMessage.Header == nil {
+	if ch.currentMsg.Header == nil {
 		return proto.NewSoftError(500, "Unexpected body frame. Header not set", 0, 0)
 	}
 
-	ch.currentMessage.Payload = append(ch.currentMessage.Payload, bf.Body...)
+	ch.currentMsg.Payload = append(ch.currentMsg.Payload, bf.Body...)
 
-	size := uint64(len(ch.currentMessage.Payload))
+	size := uint64(len(ch.currentMsg.Payload))
 	// Message yet to complete
-	if size < ch.currentMessage.Header.BodySize {
+	if size < ch.currentMsg.Header.BodySize {
 		return nil
 	}
 
 	// Set MessageFrame's body with all content recieved
-	ch.bodyMf.SetBody(ch.currentMessage.Payload)
+	ch.bodyMf.SetBody(ch.currentMsg.Payload)
 
 	var err *proto.Error
 
@@ -369,7 +369,7 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 
 func (ch *Channel) resetMessages() {
 	ch.bodyMf = nil
-	ch.currentMessage = nil
+	ch.currentMsg = nil
 }
 
 func (ch *Channel) Close() error {
@@ -571,11 +571,11 @@ func (ch *Channel) Publish(exchange, key string, immediate bool, body []byte) er
 		Immediate:  immediate,
 		Body:       body,
 	}
-	ch.currentMessage = proto.NewMessage(bp)
+	ch.currentMsg = proto.NewMessage(bp)
 	if err := ch.send(bp); err != nil {
 		return err
 	}
-	ch.currentMessage = nil
+	ch.currentMsg = nil
 	return nil
 }
 

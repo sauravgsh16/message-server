@@ -76,20 +76,20 @@ func (ms *MsgStore) AddMessage(msg *proto.Message, qs []string) (map[string][]*p
 
 func (ms *MsgStore) AddTxMessages(msgs []*proto.TxMessage) (map[string][]*proto.QueueMessage, error) {
 	// Create IndexMessage instances for each message
-	indexMessage := make(map[int64]*proto.IndexMessage)
-	queueMessage := make(map[string][]*proto.QueueMessage)
+	idxMsg := make(map[int64]*proto.IndexMessage)
+	qMsg := make(map[string][]*proto.QueueMessage)
 
 	for _, msg := range msgs {
 		// Check or Create index message
-		im, found := indexMessage[msg.Msg.ID]
+		im, found := idxMsg[msg.Msg.ID]
 		if !found {
 			im = proto.NewIndexMessage(msg.Msg.ID, 0, 0)
-			indexMessage[msg.Msg.ID] = im
+			idxMsg[msg.Msg.ID] = im
 		}
 		im.Refs += 1
 
 		// Check or Create Queue Message
-		queues, found := queueMessage[msg.QueueName]
+		queues, found := qMsg[msg.QueueName]
 		if !found {
 			queues = make([]*proto.QueueMessage, 0, 1)
 		}
@@ -98,7 +98,7 @@ func (ms *MsgStore) AddTxMessages(msgs []*proto.TxMessage) (map[string][]*proto.
 			0,
 			calcMessageSize(msg.Msg),
 		)
-		queueMessage[msg.QueueName] = append(queues, qm)
+		qMsg[msg.QueueName] = append(queues, qm)
 	}
 
 	// Add indexes and messages to Memory
@@ -108,13 +108,13 @@ func (ms *MsgStore) AddTxMessages(msgs []*proto.TxMessage) (map[string][]*proto.
 	defer ms.indexMux.Unlock()
 
 	for _, msg := range msgs {
-		ms.index[msg.Msg.ID] = indexMessage[msg.Msg.ID]
+		ms.index[msg.Msg.ID] = idxMsg[msg.Msg.ID]
 		ms.messages[msg.Msg.ID] = msg.Msg
 	}
-	return queueMessage, nil
+	return qMsg, nil
 }
 
-func (ms *MsgStore) GetMessage(id int64) (*proto.Message, bool) {
+func (ms *MsgStore) GetMsg(id int64) (*proto.Message, bool) {
 	ms.msgMux.Lock()
 	defer ms.msgMux.Unlock()
 
@@ -122,7 +122,7 @@ func (ms *MsgStore) GetMessage(id int64) (*proto.Message, bool) {
 	return msg, found
 }
 
-func (ms *MsgStore) GetIndexMessage(id int64) (*proto.IndexMessage, bool) {
+func (ms *MsgStore) GetIdxMsg(id int64) (*proto.IndexMessage, bool) {
 	ms.indexMux.Lock()
 	defer ms.indexMux.Unlock()
 
@@ -132,7 +132,7 @@ func (ms *MsgStore) GetIndexMessage(id int64) (*proto.IndexMessage, bool) {
 
 func (ms *MsgStore) RemoveRef(qm *proto.QueueMessage, queueName string, mrh []proto.MessageResourceHolder) error {
 
-	im, found := ms.GetIndexMessage(qm.ID)
+	im, found := ms.GetIdxMsg(qm.ID)
 	if !found {
 		panic("Message in queue - but not in Index. Unrecoverable failure")
 	}
@@ -238,39 +238,39 @@ func (ms *MsgStore) updateFunc(qmToAdd, qmToDelete, qmDelivered map[Key]*proto.Q
 		for k, qm := range qmToAdd {
 			// Add messages to content/index stores
 			if _, ok := alreadyAdded[k.id]; !ok {
-				msg, foundMsg := ms.GetMessage(k.id)
-				im, foundIm := ms.GetIndexMessage(k.id)
+				msg, foundMsg := ms.GetMsg(k.id)
+				im, foundIm := ms.GetIdxMsg(k.id)
 				if foundMsg != foundIm {
-					panic("Message index discrrpency")
+					panic("Message index discrepency")
 				}
 				if !foundMsg {
 					// This means, msg must have been deleted earlier
 					continue
 				}
-				persistMessage(tx, msg)
-				persistIndexMessage(tx, im)
+				persistMsg(tx, msg)
+				persistIdxMsg(tx, im)
 			}
-			persistQueueMessage(tx, k.queuename, qm)
+			persistQMsg(tx, k.queuename, qm)
 		}
 
 		// Update delivered
 		for k, qm := range qmDelivered {
-			persistQueueMessage(tx, k.queuename, qm)
+			persistQMsg(tx, k.queuename, qm)
 		}
 
 		// Delete qm - remove from queue
 		for k, qm := range qmToDelete {
-			if err := depersistQueueMessage(tx, k.queuename, qm.ID); err != nil {
+			if err := depersistQMsg(tx, k.queuename, qm.ID); err != nil {
 				return err
 			}
-			refCount, err := decrementIndexRef(tx, qm.ID, ms)
+			refCount, err := decrementIdxRef(tx, qm.ID, ms)
 			if err != nil {
 				return err
 			}
 
 			// Delete messages if no references remain
 			if refCount == 0 {
-				if err := depersistMessage(tx, qm.ID); err != nil {
+				if err := depersistMsg(tx, qm.ID); err != nil {
 					return err
 				}
 			}
@@ -285,7 +285,7 @@ func getIdByte(id int64) []byte {
 	return buf.Bytes()
 }
 
-func persistMessage(tx *bolt.Tx, msg *proto.Message) error {
+func persistMsg(tx *bolt.Tx, msg *proto.Message) error {
 	bucket, err := tx.CreateBucketIfNotExists(CONTENT_BUCKET)
 	if err != nil {
 		return err
@@ -298,7 +298,7 @@ func persistMessage(tx *bolt.Tx, msg *proto.Message) error {
 	return bucket.Put(key, encoded)
 }
 
-func persistIndexMessage(tx *bolt.Tx, im *proto.IndexMessage) error {
+func persistIdxMsg(tx *bolt.Tx, im *proto.IndexMessage) error {
 	bucket, err := tx.CreateBucketIfNotExists(CONTENT_BUCKET)
 	if err != nil {
 		return err
@@ -311,7 +311,7 @@ func persistIndexMessage(tx *bolt.Tx, im *proto.IndexMessage) error {
 	return bucket.Put(key, encoded)
 }
 
-func persistQueueMessage(tx *bolt.Tx, qname string, qm *proto.QueueMessage) error {
+func persistQMsg(tx *bolt.Tx, qname string, qm *proto.QueueMessage) error {
 	bucketName := fmt.Sprintf("queue_%s", qname)
 	bucket, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 	if err != nil {
@@ -325,7 +325,7 @@ func persistQueueMessage(tx *bolt.Tx, qname string, qm *proto.QueueMessage) erro
 	return bucket.Put(key, encoded)
 }
 
-func depersistMessage(tx *bolt.Tx, id int64) error {
+func depersistMsg(tx *bolt.Tx, id int64) error {
 	bucket, err := tx.CreateBucketIfNotExists(CONTENT_BUCKET)
 	if err != nil {
 		return err
@@ -334,7 +334,7 @@ func depersistMessage(tx *bolt.Tx, id int64) error {
 	return bucket.Delete(key)
 }
 
-func depersistQueueMessage(tx *bolt.Tx, qname string, id int64) error {
+func depersistQMsg(tx *bolt.Tx, qname string, id int64) error {
 	bucketName := fmt.Sprintf("queue_%s", qname)
 	bucket, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 	if err != nil {
@@ -344,7 +344,7 @@ func depersistQueueMessage(tx *bolt.Tx, qname string, id int64) error {
 	return bucket.Delete(key)
 }
 
-func decrementIndexRef(tx *bolt.Tx, id int64, ms *MsgStore) (int32, error) {
+func decrementIdxRef(tx *bolt.Tx, id int64, ms *MsgStore) (int32, error) {
 	bucket, err := tx.CreateBucketIfNotExists(INDEX_BUCKET)
 	if err != nil {
 		return -1, err

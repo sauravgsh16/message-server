@@ -17,7 +17,7 @@ func (ch *Channel) txRoute(msgf proto.MessageFrame) *proto.Error {
 		return ch.txRollback(m)
 
 	default:
-		clsID, mtdID := msgf.MethodIdentifier()
+		clsID, mtdID := msgf.Identifier()
 		return proto.NewHardError(540, "unable to route method frame", clsID, mtdID) // ERROR CODE -- IMPLEMENTATION
 	}
 }
@@ -29,7 +29,7 @@ func (ch *Channel) txSelect(m *proto.TxSelect) *proto.Error {
 }
 
 func (ch *Channel) txCommit(m *proto.TxCommit) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+	clsID, mtdID := m.Identifier()
 	if err := ch.commitTx(clsID, mtdID); err != nil {
 		return err
 	}

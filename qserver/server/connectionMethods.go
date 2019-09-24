@@ -4,36 +4,28 @@ import (
 	"github.com/sauravgsh16/secoc-third/proto"
 )
 
-func (ch *Channel) connectionRoute(conn *Connection, msgf proto.MessageFrame) *proto.Error {
-	switch method := msgf.(type) {
+func (ch *Channel) connRoute(conn *Connection, msgf proto.MessageFrame) *proto.Error {
+	switch m := msgf.(type) {
 
 	case *proto.ConnectionStartOk:
-		return ch.connectionStartOk(conn, method)
+		return ch.connStartOk(conn, m)
 
 	case *proto.ConnectionOpen:
-		return ch.connectionOpen(conn, method)
+		return ch.connOpen(conn, m)
 
 	case *proto.ConnectionClose:
-		return ch.connectionClose(conn, method)
+		return ch.connClose(conn, m)
 
 	case *proto.ConnectionCloseOk:
-		return ch.connectionCloseOk(conn, method)
+		return ch.connCloseOk(conn, m)
 
 	default:
-		clsID, mtdID := method.MethodIdentifier()
+		clsID, mtdID := m.Identifier()
 		return proto.NewHardError(540, "unable to route frame", clsID, mtdID)
 	}
 }
 
-func (ch *Channel) startConnection() *proto.Error {
-	ch.Send(&proto.ConnectionStart{
-		Version:    1,
-		Mechanisms: "PLAIN",
-	})
-	return nil
-}
-
-func (ch *Channel) connectionOpen(c *Connection, m *proto.ConnectionOpen) *proto.Error {
+func (ch *Channel) connOpen(c *Connection, m *proto.ConnectionOpen) *proto.Error {
 	// TODO : check if m.Host is accessible.
 	// If not, then close connection - break
 	c.status.open = true
@@ -42,7 +34,7 @@ func (ch *Channel) connectionOpen(c *Connection, m *proto.ConnectionOpen) *proto
 	return nil
 }
 
-func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) *proto.Error {
+func (ch *Channel) connStartOk(c *Connection, m *proto.ConnectionStartOk) *proto.Error {
 	c.status.startOk = true
 
 	if m.Mechanism != "PLAIN" {
@@ -51,7 +43,7 @@ func (ch *Channel) connectionStartOk(c *Connection, m *proto.ConnectionStartOk) 
 	return nil
 }
 
-func (ch *Channel) connectionClose(c *Connection, m *proto.ConnectionClose) *proto.Error {
+func (ch *Channel) connClose(c *Connection, m *proto.ConnectionClose) *proto.Error {
 	ch.Send(&proto.ConnectionCloseOk{})
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -61,7 +53,7 @@ func (ch *Channel) connectionClose(c *Connection, m *proto.ConnectionClose) *pro
 	return nil
 }
 
-func (ch *Channel) connectionCloseOk(c *Connection, m *proto.ConnectionCloseOk) *proto.Error {
+func (ch *Channel) connCloseOk(c *Connection, m *proto.ConnectionCloseOk) *proto.Error {
 	c.hardClose()
 	return nil
 }

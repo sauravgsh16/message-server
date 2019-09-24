@@ -11,7 +11,7 @@ import (
 
 // ** ConnectionStart **
 
-func (f *ConnectionStart) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionStart) Identifier() (uint16, uint16) {
 	return 10, 10
 }
 
@@ -56,7 +56,7 @@ func (f *ConnectionStart) Write(w io.Writer) (err error) {
 
 // ** ConnectionStartOk **
 
-func (f *ConnectionStartOk) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionStartOk) Identifier() (uint16, uint16) {
 	return 10, 11
 }
 
@@ -99,7 +99,7 @@ func (f *ConnectionStartOk) Write(w io.Writer) (err error) {
 
 // ** ConnectionOpen **
 
-func (f *ConnectionOpen) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionOpen) Identifier() (uint16, uint16) {
 	return 10, 20
 }
 
@@ -133,7 +133,7 @@ func (f *ConnectionOpen) Write(w io.Writer) (err error) {
 
 // ** ConnectionOpenOk **
 
-func (f *ConnectionOpenOk) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionOpenOk) Identifier() (uint16, uint16) {
 	return 10, 21
 }
 
@@ -167,7 +167,7 @@ func (f *ConnectionOpenOk) Write(w io.Writer) (err error) {
 
 // ** ConnectionClose **
 
-func (f *ConnectionClose) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionClose) Identifier() (uint16, uint16) {
 	return 10, 30
 }
 
@@ -228,7 +228,7 @@ func (f *ConnectionClose) Write(w io.Writer) (err error) {
 
 // ** ConnectionCloseOk **
 
-func (f *ConnectionCloseOk) MethodIdentifier() (uint16, uint16) {
+func (f *ConnectionCloseOk) Identifier() (uint16, uint16) {
 	return 10, 31
 }
 
@@ -259,7 +259,7 @@ func (f *ConnectionCloseOk) Write(w io.Writer) (err error) {
 
 // ChannelOpen
 
-func (f *ChannelOpen) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelOpen) Identifier() (uint16, uint16) {
 	return 20, 10
 }
 
@@ -293,7 +293,7 @@ func (f *ChannelOpen) Write(w io.Writer) (err error) {
 
 // ChannelOpenOk
 
-func (f *ChannelOpenOk) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelOpenOk) Identifier() (uint16, uint16) {
 	return 20, 11
 }
 
@@ -327,7 +327,7 @@ func (f *ChannelOpenOk) Write(w io.Writer) (err error) {
 
 // ChannelFlow
 
-func (f *ChannelFlow) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelFlow) Identifier() (uint16, uint16) {
 	return 20, 20
 }
 
@@ -366,7 +366,7 @@ func (f *ChannelFlow) Write(w io.Writer) (err error) {
 
 // ChannelFlowOk
 
-func (f *ChannelFlowOk) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelFlowOk) Identifier() (uint16, uint16) {
 	return 20, 21
 }
 
@@ -405,7 +405,7 @@ func (f *ChannelFlowOk) Write(w io.Writer) (err error) {
 
 // ChannelClose
 
-func (f *ChannelClose) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelClose) Identifier() (uint16, uint16) {
 	return 20, 30
 }
 
@@ -466,7 +466,7 @@ func (f *ChannelClose) Write(w io.Writer) (err error) {
 
 // ChannelCloseOk
 
-func (f *ChannelCloseOk) MethodIdentifier() (uint16, uint16) {
+func (f *ChannelCloseOk) Identifier() (uint16, uint16) {
 	return 20, 31
 }
 
@@ -497,7 +497,7 @@ func (f *ChannelCloseOk) Write(w io.Writer) (err error) {
 
 // ExchangeDeclare
 
-func (f *ExchangeDeclare) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeDeclare) Identifier() (uint16, uint16) {
 	return 30, 10
 }
 
@@ -557,7 +557,7 @@ func (f *ExchangeDeclare) Write(w io.Writer) (err error) {
 
 // ExchangeDeclareOk
 
-func (f *ExchangeDeclareOk) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeDeclareOk) Identifier() (uint16, uint16) {
 	return 30, 11
 }
 
@@ -584,7 +584,7 @@ func (f *ExchangeDeclareOk) Write(w io.Writer) (err error) {
 
 // ExchangeDelete
 
-func (f *ExchangeDelete) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeDelete) Identifier() (uint16, uint16) {
 	return 30, 20
 }
 
@@ -641,7 +641,7 @@ func (f *ExchangeDelete) Write(w io.Writer) (err error) {
 
 // ExchangeDeleteOk
 
-func (f *ExchangeDeleteOk) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeDeleteOk) Identifier() (uint16, uint16) {
 	return 30, 21
 }
 
@@ -668,7 +668,7 @@ func (f *ExchangeDeleteOk) Write(w io.Writer) (err error) {
 
 // ExchangeBind
 
-func (f *ExchangeBind) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeBind) Identifier() (uint16, uint16) {
 	return 30, 30
 }
 
@@ -738,7 +738,7 @@ func (f *ExchangeBind) Write(w io.Writer) (err error) {
 
 // ExchangeBindOk
 
-func (f *ExchangeBindOk) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeBindOk) Identifier() (uint16, uint16) {
 	return 30, 31
 }
 
@@ -765,7 +765,7 @@ func (f *ExchangeBindOk) Write(w io.Writer) (err error) {
 
 // ExchangeUnbind
 
-func (f *ExchangeUnbind) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeUnbind) Identifier() (uint16, uint16) {
 	return 30, 40
 }
 
@@ -835,7 +835,7 @@ func (f *ExchangeUnbind) Write(w io.Writer) (err error) {
 
 // ExchangeUnbindOk
 
-func (f *ExchangeUnbindOk) MethodIdentifier() (uint16, uint16) {
+func (f *ExchangeUnbindOk) Identifier() (uint16, uint16) {
 	return 30, 41
 }
 
@@ -874,7 +874,7 @@ func (f *ExchangeUnbindOk) Write(w io.Writer) (err error) {
 
 // QueueDeclare
 
-func (f *QueueDeclare) MethodIdentifier() (uint16, uint16) {
+func (f *QueueDeclare) Identifier() (uint16, uint16) {
 	return 40, 10
 }
 
@@ -925,7 +925,7 @@ func (f *QueueDeclare) Write(w io.Writer) (err error) {
 
 // QueueDeclareOk
 
-func (f *QueueDeclareOk) MethodIdentifier() (uint16, uint16) {
+func (f *QueueDeclareOk) Identifier() (uint16, uint16) {
 	return 40, 11
 }
 
@@ -978,7 +978,7 @@ func (f *QueueDeclareOk) Write(w io.Writer) (err error) {
 
 // QueueBind
 
-func (f *QueueBind) MethodIdentifier() (uint16, uint16) {
+func (f *QueueBind) Identifier() (uint16, uint16) {
 	return 40, 20
 }
 
@@ -1047,7 +1047,7 @@ func (f *QueueBind) Write(w io.Writer) (err error) {
 
 // QueueBindOk
 
-func (f *QueueBindOk) MethodIdentifier() (uint16, uint16) {
+func (f *QueueBindOk) Identifier() (uint16, uint16) {
 	return 40, 21
 }
 
@@ -1074,7 +1074,7 @@ func (f *QueueBindOk) Write(w io.Writer) (err error) {
 
 // QueueUnbind
 
-func (f *QueueUnbind) MethodIdentifier() (uint16, uint16) {
+func (f *QueueUnbind) Identifier() (uint16, uint16) {
 	return 40, 30
 }
 
@@ -1127,7 +1127,7 @@ func (f *QueueUnbind) Write(w io.Writer) (err error) {
 
 // QueueUnbindOk
 
-func (f *QueueUnbindOk) MethodIdentifier() (uint16, uint16) {
+func (f *QueueUnbindOk) Identifier() (uint16, uint16) {
 	return 40, 31
 }
 
@@ -1154,7 +1154,7 @@ func (f *QueueUnbindOk) Write(w io.Writer) (err error) {
 
 // QueueDelete
 
-func (f *QueueDelete) MethodIdentifier() (uint16, uint16) {
+func (f *QueueDelete) Identifier() (uint16, uint16) {
 	return 40, 40
 }
 
@@ -1213,7 +1213,7 @@ func (f *QueueDelete) Write(w io.Writer) (err error) {
 
 // QueueDeleteOk
 
-func (f *QueueDeleteOk) MethodIdentifier() (uint16, uint16) {
+func (f *QueueDeleteOk) Identifier() (uint16, uint16) {
 	return 40, 41
 }
 
@@ -1261,7 +1261,7 @@ func (f *QueueDeleteOk) Write(w io.Writer) (err error) {
 
 // BasicConsume
 
-func (f *BasicConsume) MethodIdentifier() (uint16, uint16) {
+func (f *BasicConsume) Identifier() (uint16, uint16) {
 	return 50, 10
 }
 
@@ -1326,7 +1326,7 @@ func (f *BasicConsume) Write(w io.Writer) (err error) {
 
 // BasicConsumeOk
 
-func (f *BasicConsumeOk) MethodIdentifier() (uint16, uint16) {
+func (f *BasicConsumeOk) Identifier() (uint16, uint16) {
 	return 50, 11
 }
 
@@ -1361,7 +1361,7 @@ func (f *BasicConsumeOk) Write(w io.Writer) (err error) {
 
 // BasicCancel
 
-func (f *BasicCancel) MethodIdentifier() (uint16, uint16) {
+func (f *BasicCancel) Identifier() (uint16, uint16) {
 	return 50, 20
 }
 
@@ -1412,7 +1412,7 @@ func (f *BasicCancel) Write(w io.Writer) (err error) {
 
 // BasicCancelOk
 
-func (f *BasicCancelOk) MethodIdentifier() (uint16, uint16) {
+func (f *BasicCancelOk) Identifier() (uint16, uint16) {
 	return 50, 21
 }
 
@@ -1447,7 +1447,7 @@ func (f *BasicCancelOk) Write(w io.Writer) (err error) {
 
 // BasicPublish
 
-func (f *BasicPublish) MethodIdentifier() (uint16, uint16) {
+func (f *BasicPublish) Identifier() (uint16, uint16) {
 	return 50, 30
 }
 
@@ -1516,7 +1516,7 @@ func (f *BasicPublish) Write(w io.Writer) (err error) {
 
 // BasicReturn
 
-func (f *BasicReturn) MethodIdentifier() (uint16, uint16) {
+func (f *BasicReturn) Identifier() (uint16, uint16) {
 	return 50, 40
 }
 
@@ -1586,7 +1586,7 @@ func (f *BasicReturn) Write(w io.Writer) (err error) {
 
 // BasicDeliver
 
-func (f *BasicDeliver) MethodIdentifier() (uint16, uint16) {
+func (f *BasicDeliver) Identifier() (uint16, uint16) {
 	return 50, 50
 }
 
@@ -1656,7 +1656,7 @@ func (f *BasicDeliver) Write(w io.Writer) (err error) {
 
 // BasicAck
 
-func (f *BasicAck) MethodIdentifier() (uint16, uint16) {
+func (f *BasicAck) Identifier() (uint16, uint16) {
 	return 50, 60
 }
 
@@ -1707,7 +1707,7 @@ func (f *BasicAck) Write(w io.Writer) (err error) {
 
 // BasicNack
 
-func (f *BasicNack) MethodIdentifier() (uint16, uint16) {
+func (f *BasicNack) Identifier() (uint16, uint16) {
 	return 50, 70
 }
 
@@ -1773,7 +1773,7 @@ func (f *BasicNack) Write(w io.Writer) (err error) {
 
 // TxSelect
 
-func (f *TxSelect) MethodIdentifier() (uint16, uint16) {
+func (f *TxSelect) Identifier() (uint16, uint16) {
 	return 60, 10
 }
 
@@ -1794,13 +1794,12 @@ func (f *TxSelect) Read(r io.Reader) (err error) {
 }
 
 func (f *TxSelect) Write(w io.Writer) (err error) {
-
 	return
 }
 
 // TxSelectOk
 
-func (f *TxSelectOk) MethodIdentifier() (uint16, uint16) {
+func (f *TxSelectOk) Identifier() (uint16, uint16) {
 	return 60, 11
 }
 
@@ -1821,13 +1820,12 @@ func (f *TxSelectOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxSelectOk) Write(w io.Writer) (err error) {
-
 	return
 }
 
 // TxCommit
 
-func (f *TxCommit) MethodIdentifier() (uint16, uint16) {
+func (f *TxCommit) Identifier() (uint16, uint16) {
 	return 60, 20
 }
 
@@ -1848,13 +1846,12 @@ func (f *TxCommit) Read(r io.Reader) (err error) {
 }
 
 func (f *TxCommit) Write(w io.Writer) (err error) {
-
 	return
 }
 
 // TxCommitOk
 
-func (f *TxCommitOk) MethodIdentifier() (uint16, uint16) {
+func (f *TxCommitOk) Identifier() (uint16, uint16) {
 	return 60, 21
 }
 
@@ -1875,13 +1872,12 @@ func (f *TxCommitOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxCommitOk) Write(w io.Writer) (err error) {
-
 	return
 }
 
 // TxRollback
 
-func (f *TxRollback) MethodIdentifier() (uint16, uint16) {
+func (f *TxRollback) Identifier() (uint16, uint16) {
 	return 60, 30
 }
 
@@ -1902,13 +1898,12 @@ func (f *TxRollback) Read(r io.Reader) (err error) {
 }
 
 func (f *TxRollback) Write(w io.Writer) (err error) {
-
 	return
 }
 
 // TxRollbackOk
 
-func (f *TxRollbackOk) MethodIdentifier() (uint16, uint16) {
+func (f *TxRollbackOk) Identifier() (uint16, uint16) {
 	return 60, 31
 }
 
@@ -1929,6 +1924,5 @@ func (f *TxRollbackOk) Read(r io.Reader) (err error) {
 }
 
 func (f *TxRollbackOk) Write(w io.Writer) (err error) {
-
 	return
 }

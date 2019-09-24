@@ -23,15 +23,15 @@ func (ch *Channel) channelRoute(msgf proto.MessageFrame) *proto.Error {
 		return ch.channelCloseOk(method)
 
 	default:
-		clsID, mtdID := msgf.MethodIdentifier()
+		clsID, mtdID := msgf.Identifier()
 		return proto.NewHardError(540, "Unknown Frame", clsID, mtdID)
 	}
 }
 
 func (ch *Channel) channelOpen(m *proto.ChannelOpen) *proto.Error {
 	if ch.state == CH_OPEN {
-		var classId, methodId = m.MethodIdentifier()
-		return proto.NewHardError(504, "channel already open", classId, methodId)
+		clsID, mtdID := m.Identifier()
+		return proto.NewHardError(504, "channel already open", clsID, mtdID)
 	}
 	ch.Send(&proto.ChannelOpenOk{Response: "200"})
 	ch.state = CH_OPEN
@@ -45,7 +45,7 @@ func (ch *Channel) channelFlow(m *proto.ChannelFlow) *proto.Error {
 }
 
 func (ch *Channel) channelFlowOk(m *proto.ChannelFlowOk) *proto.Error {
-	cls, mtd := m.MethodIdentifier()
+	cls, mtd := m.Identifier()
 	return proto.NewHardError(40, "Not Implemented", cls, mtd)
 }
 

@@ -9,28 +9,28 @@ import (
 )
 
 func (ch *Channel) queueRoute(msgf proto.MessageFrame) *proto.Error {
-	switch method := msgf.(type) {
+	switch m := msgf.(type) {
 
 	case *proto.QueueDeclare:
-		return ch.queueDeclare(method)
+		return ch.qDeclare(m)
 
 	case *proto.QueueBind:
-		return ch.queueBind(method)
+		return ch.qBind(m)
 
 	case *proto.QueueUnbind:
-		return ch.queueUnbind(method)
+		return ch.qUnbind(m)
 
 	case *proto.QueueDelete:
-		return ch.queueDelete(method)
+		return ch.qDelete(m)
 
 	default:
-		clsID, mtdID := msgf.MethodIdentifier()
+		clsID, mtdID := msgf.Identifier()
 		return proto.NewHardError(540, "Not Implemented Queue method", clsID, mtdID)
 	}
 }
 
-func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+func (ch *Channel) qDeclare(m *proto.QueueDeclare) *proto.Error {
+	clsID, mtdID := m.Identifier()
 
 	// Check if Queue already exists
 	q, found := ch.conn.server.queues[m.Queue]
@@ -64,8 +64,8 @@ func (ch *Channel) queueDeclare(m *proto.QueueDeclare) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+func (ch *Channel) qBind(m *proto.QueueBind) *proto.Error {
+	clsID, mtdID := m.Identifier()
 
 	if len(m.Queue) == 0 {
 		if len(ch.usedQueueName) == 0 {
@@ -108,8 +108,8 @@ func (ch *Channel) queueBind(m *proto.QueueBind) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+func (ch *Channel) qUnbind(m *proto.QueueUnbind) *proto.Error {
+	clsID, mtdID := m.Identifier()
 
 	if len(m.Queue) == 0 {
 		if len(ch.usedQueueName) == 0 {
@@ -148,8 +148,8 @@ func (ch *Channel) queueUnbind(m *proto.QueueUnbind) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) queueDelete(m *proto.QueueDelete) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+func (ch *Channel) qDelete(m *proto.QueueDelete) *proto.Error {
+	clsID, mtdID := m.Identifier()
 
 	if len(m.Queue) == 0 {
 		if len(ch.usedQueueName) == 0 {

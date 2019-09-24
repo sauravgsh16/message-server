@@ -74,6 +74,7 @@ func (q *Queue) Add(qm *proto.QueueMessage) bool {
 		return false
 	}
 	q.list.Append(qm)
+
 	select {
 	case q.readyChan <- true:
 	default:

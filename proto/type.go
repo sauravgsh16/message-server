@@ -10,7 +10,7 @@ type Frame interface {
 }
 
 type MessageFrame interface {
-	MethodIdentifier() (uint16, uint16)
+	Identifier() (uint16, uint16)
 	Read(r io.Reader) (err error)
 	Write(w io.Writer) (err error)
 	FrameType() byte

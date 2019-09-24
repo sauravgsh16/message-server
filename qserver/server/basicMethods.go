@@ -6,31 +6,31 @@ import (
 )
 
 func (ch *Channel) basicRoute(msgf proto.MessageFrame) *proto.Error {
-	switch method := msgf.(type) {
+	switch m := msgf.(type) {
 
 	case *proto.BasicConsume:
-		return ch.basicConsume(method)
+		return ch.basicConsume(m)
 
 	case *proto.BasicCancel:
-		return ch.basicCancel(method)
+		return ch.basicCancel(m)
 
 	case *proto.BasicPublish:
-		return ch.basicPublish(method)
+		return ch.basicPublish(m)
 
 	case *proto.BasicAck:
-		return ch.basicAck(method)
+		return ch.basicAck(m)
 
 	case *proto.BasicNack:
-		return ch.basicNack(method)
+		return ch.basicNack(m)
 
 	default:
-		clsID, mtdID := msgf.MethodIdentifier()
+		clsID, mtdID := msgf.Identifier()
 		return proto.NewHardError(540, "unable to route method frame", clsID, mtdID)
 	}
 }
 
 func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+	clsID, mtdID := m.Identifier()
 
 	// Check queue
 	if len(m.Queue) == 0 {
@@ -62,7 +62,7 @@ func (ch *Channel) basicConsume(m *proto.BasicConsume) *proto.Error {
 
 func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.Error {
 	if err := ch.removeConsumer(m.ConsumerTag); err != nil {
-		clsID, mtdID := m.MethodIdentifier()
+		clsID, mtdID := m.Identifier()
 		return proto.NewSoftError(404, err.Error(), clsID, mtdID)
 	}
 	if !m.NoWait {
@@ -74,7 +74,7 @@ func (ch *Channel) basicCancel(m *proto.BasicCancel) *proto.Error {
 func (ch *Channel) basicPublish(m *proto.BasicPublish) *proto.Error {
 	_, found := ch.server.exchanges[m.Exchange]
 	if !found {
-		clsID, mtdID := m.MethodIdentifier()
+		clsID, mtdID := m.Identifier()
 		return proto.NewSoftError(404, "Exchange not found", clsID, mtdID)
 	}
 

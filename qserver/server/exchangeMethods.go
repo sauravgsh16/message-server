@@ -6,35 +6,35 @@ import (
 )
 
 func (ch *Channel) exchangeRoute(msgf proto.MessageFrame) *proto.Error {
-	switch method := msgf.(type) {
+	switch m := msgf.(type) {
 
 	case *proto.ExchangeDeclare:
-		return ch.exchangeDeclare(method)
+		return ch.exDeclare(m)
 
 	case *proto.ExchangeDelete:
-		return ch.exchangeDelete(method)
+		return ch.exDelete(m)
 
 	case *proto.ExchangeBind:
-		return ch.exchangeBind(method)
+		return ch.exBind(m)
 
 	case *proto.ExchangeUnbind:
-		return ch.exchangeUnbind(method)
+		return ch.exUnbind(m)
 
 	default:
-		clsID, mtdID := msgf.MethodIdentifier()
+		clsID, mtdID := msgf.Identifier()
 		return proto.NewHardError(540, "Unknown Frame", clsID, mtdID)
 	}
 }
 
-func (ch *Channel) exchangeDeclare(m *proto.ExchangeDeclare) *proto.Error {
+func (ch *Channel) exDeclare(m *proto.ExchangeDeclare) *proto.Error {
 
-	clsID, mtdID := m.MethodIdentifier()
+	clsID, mtdID := m.Identifier()
 
 	// Check if exchange is already present in Server
 	declared, hasEx := ch.server.getExchange(m.Exchange)
 	if hasEx {
 		// Check if existing exchange and new exchange have different type
-		extype, err := exchange.ExchangeNameFromType(m.Type)
+		extype, err := exchange.GetExType(m.Type)
 		if err != nil {
 			return proto.NewHardError(407, "Unsupported exchange type", clsID, mtdID)
 		}
@@ -66,8 +66,8 @@ func (ch *Channel) exchangeDeclare(m *proto.ExchangeDeclare) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) exchangeDelete(m *proto.ExchangeDelete) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+func (ch *Channel) exDelete(m *proto.ExchangeDelete) *proto.Error {
+	clsID, mtdID := m.Identifier()
 	errCode, err := ch.server.deleteExchange(m)
 	if err != nil {
 		return proto.NewSoftError(errCode, err.Error(), clsID, mtdID)
@@ -78,12 +78,12 @@ func (ch *Channel) exchangeDelete(m *proto.ExchangeDelete) *proto.Error {
 	return nil
 }
 
-func (ch *Channel) exchangeBind(m *proto.ExchangeBind) *proto.Error {
-	cls, mtd := m.MethodIdentifier()
+func (ch *Channel) exBind(m *proto.ExchangeBind) *proto.Error {
+	cls, mtd := m.Identifier()
 	return proto.NewHardError(540, "Not Implemented", cls, mtd)
 }
 
-func (ch *Channel) exchangeUnbind(m *proto.ExchangeUnbind) *proto.Error {
-	cls, mtd := m.MethodIdentifier()
+func (ch *Channel) exUnbind(m *proto.ExchangeUnbind) *proto.Error {
+	cls, mtd := m.Identifier()
 	return proto.NewHardError(540, "Not Implemented", cls, mtd)
 }

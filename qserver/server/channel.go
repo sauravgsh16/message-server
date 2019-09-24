@@ -17,26 +17,26 @@ const (
 )
 
 type Channel struct {
-	id             uint16
-	server         *Server
-	incoming       chan proto.Frame
-	outgoing       chan proto.Frame
-	conn           *Connection
-	consumers      map[string]*consumer.Consumer
-	consumerMux    sync.Mutex
-	sendMux        sync.Mutex
-	state          uint8
-	currentMessage *proto.Message
-	flow           bool
-	usedQueueName  string
-	deliveryTag    uint64
-	tagMux         sync.Mutex
-	txMode         bool
-	txMessages     []*proto.TxMessage
-	txLock         sync.Mutex
-	defaultSize    uint32
-	activeSize     uint32
-	sizeMux        sync.Mutex
+	id            uint16
+	server        *Server
+	incoming      chan proto.Frame
+	outgoing      chan proto.Frame
+	conn          *Connection
+	consumers     map[string]*consumer.Consumer
+	consumerMux   sync.Mutex
+	sendMux       sync.Mutex
+	state         uint8
+	curMsg        *proto.Message
+	flow          bool
+	usedQueueName string
+	deliveryTag   uint64
+	tagMux        sync.Mutex
+	txMode        bool
+	txMessages    []*proto.TxMessage
+	txLock        sync.Mutex
+	defaultSize   uint32
+	activeSize    uint32
+	sizeMux       sync.Mutex
 }
 
 func NewChannel(id uint16, conn *Connection) *Channel {
@@ -72,7 +72,7 @@ func (ch *Channel) sendClosed(msgf proto.MessageFrame) error {
 			Method:    msgf,
 		})
 	}
-	clsID, mtdID := msgf.MethodIdentifier()
+	clsID, mtdID := msgf.Identifier()
 	return proto.NewSoftError(501, "Send attempt on closed channel", clsID, mtdID)
 }
 
@@ -84,7 +84,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
 		body := mcf.GetBody()
-		clsID, _ := mcf.MethodIdentifier()
+		clsID, _ := mcf.Identifier()
 		size := uint64(len(body))
 
 		// Send Method
@@ -238,12 +238,12 @@ func (ch *Channel) commitTx(clsID, mtdID uint16) *proto.Error {
 	ch.txLock.Lock()
 	defer ch.txLock.Unlock()
 
-	mapQueueWithQueueMessages, err := ch.server.msgStore.AddTxMessages(ch.txMessages)
+	qQueueMsgMap, err := ch.server.msgStore.AddTxMessages(ch.txMessages)
 	if err != nil {
 		return proto.NewSoftError(500, err.Error(), clsID, mtdID)
 	}
 
-	for qName, qMsgs := range mapQueueWithQueueMessages {
+	for qName, qMsgs := range qQueueMsgMap {
 		queue, found := ch.server.queues[qName]
 		if !found {
 			continue
@@ -288,7 +288,7 @@ func (ch *Channel) activateFlow(active bool) {
 }
 
 func (ch *Channel) addNewConsumer(q *queue.Queue, m *proto.BasicConsume) *proto.Error {
-	clsID, mtdID := m.MethodIdentifier()
+	clsID, mtdID := m.Identifier()
 
 	c := consumer.NewConsumer(ch.server.msgStore, ch, m.ConsumerTag, q, q.Name, m.NoAck, ch.defaultSize)
 	ch.consumerMux.Lock()
@@ -327,7 +327,15 @@ func (ch *Channel) removeConsumer(consumerTag string) error {
 }
 
 func (ch *Channel) startPublish(m *proto.BasicPublish) {
-	ch.currentMessage = proto.NewMessage(m)
+	ch.curMsg = proto.NewMessage(m)
+}
+
+func (ch *Channel) startConnection() *proto.Error {
+	ch.Send(&proto.ConnectionStart{
+		Version:    1,
+		Mechanisms: "PLAIN",
+	})
+	return nil
 }
 
 func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
@@ -342,7 +350,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 	// Route methodFrame based on clsID
 	switch mf.ClassID {
 	case 10:
-		return ch.connectionRoute(ch.conn, mf.Method)
+		return ch.connRoute(ch.conn, mf.Method)
 	case 20:
 		return ch.channelRoute(mf.Method)
 	case 30:
@@ -359,41 +367,42 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 }
 
 func (ch *Channel) handleHeader(hf *proto.HeaderFrame) *proto.Error {
-	if ch.currentMessage == nil {
+	if ch.curMsg == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)
 	}
 
-	if ch.currentMessage.Header != nil {
+	if ch.curMsg.Header != nil {
 		return proto.NewSoftError(500, "unexpected - header already seen", 0, 0)
 	}
 
-	ch.currentMessage.Header = hf
+	ch.curMsg.Header = hf
 
 	return nil
 }
 
 func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
-	if ch.currentMessage == nil {
+	if ch.curMsg == nil {
 		return proto.NewSoftError(500, "unexpected header frame", 0, 0)
 	}
 
-	if ch.currentMessage.Header == nil {
+	if ch.curMsg.Header == nil {
 		return proto.NewSoftError(500, "unexpected body frame - no header yet", 0, 0)
 	}
 
-	ch.currentMessage.Payload = append(ch.currentMessage.Payload, bf.Body...)
+	ch.curMsg.Payload = append(ch.curMsg.Payload, bf.Body...)
 
-	size := uint64(len(ch.currentMessage.Payload))
-	// Message yet to complete
-	if size < ch.currentMessage.Header.BodySize {
+	size := uint64(len(ch.curMsg.Payload))
+
+	// Message yet to complete, we return
+	if size < ch.curMsg.Header.BodySize {
 		return nil
 	}
 
-	ex, _ := ch.server.getExchange(ch.currentMessage.Method.(*proto.BasicPublish).Exchange)
+	ex, _ := ch.server.getExchange(ch.curMsg.Method.(*proto.BasicPublish).Exchange)
 
 	if ch.txMode {
 		// Add message to a List
-		queues, err := ex.QueuesToPublish(ch.currentMessage)
+		queues, err := ex.QueuesToPublish(ch.curMsg)
 		if err != nil {
 			return err
 		}
@@ -401,23 +410,23 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 		// Add TxMessage for all queues
 		ch.txLock.Lock()
 		for _, queueName := range queues {
-			txMsg := proto.NewTxMessage(ch.currentMessage, queueName)
+			txMsg := proto.NewTxMessage(ch.curMsg, queueName)
 			ch.txMessages = append(ch.txMessages, txMsg)
 		}
 		ch.txLock.Unlock()
 	} else {
 		// Normal mode, publish directly
-		returnMethod, err := ch.server.publish(ex, ch.currentMessage)
+		returnMtd, err := ch.server.publish(ex, ch.curMsg)
 		if err != nil {
-			ch.currentMessage = nil
+			ch.curMsg = nil
 			return err
 		}
-		if returnMethod != nil {
-			ch.SendContent(returnMethod, ch.currentMessage)
+		if returnMtd != nil {
+			ch.SendContent(returnMtd, ch.curMsg)
 		}
 	}
 
-	ch.currentMessage = nil
+	ch.curMsg = nil
 
 	return nil
 }

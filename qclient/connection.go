@@ -305,7 +305,7 @@ func (c *Connection) routeMethod(mf *proto.MethodFrame) *proto.Error {
 
 	fmt.Println("Received", mf.Method.MethodName())
 
-	clsID, mtdID := mf.Method.MethodIdentifier()
+	clsID, mtdID := mf.Method.Identifier()
 
 	switch clsID {
 	case 10:

@@ -19,7 +19,6 @@ type Exchange struct {
 	ExType     uint8
 	bindings   []*binding.Binding
 	bindLock   sync.Mutex
-	incoming   chan proto.Frame // REDUNDANT ********************************
 	Closed     bool
 	deleteChan chan *Exchange
 }
@@ -29,16 +28,15 @@ func NewExchange(name string, extype uint8, deleteChan chan *Exchange) *Exchange
 		Name:       name,
 		ExType:     extype,
 		bindings:   make([]*binding.Binding, 0),
-		incoming:   make(chan proto.Frame),
 		deleteChan: deleteChan,
 	}
 }
 
 func NewExchangeFromMethod(m *proto.ExchangeDeclare, exDeleter chan *Exchange) (*Exchange, *proto.Error) {
-	extype, err := ExchangeNameFromType(m.Type)
+	extype, err := GetExType(m.Type)
 	if err != nil {
-		var classId, methodId = m.MethodIdentifier()
-		return nil, proto.NewHardError(503, "Invalid exchange type", classId, methodId)
+		clsID, mtdID := m.Identifier()
+		return nil, proto.NewHardError(503, err.Error(), clsID, mtdID)
 	}
 
 	ex := NewExchange(m.Exchange, extype, exDeleter)
@@ -49,7 +47,7 @@ func (ex *Exchange) Close() {
 	ex.Closed = true
 }
 
-func ExchangeNameFromType(extype string) (uint8, error) {
+func GetExType(extype string) (uint8, error) {
 	switch extype {
 	case "direct":
 		return EX_DIRECT, nil
@@ -104,7 +102,7 @@ func (ex *Exchange) RemoveQueueBindings(qname string) {
 }
 
 func (ex *Exchange) QueuesToPublish(msg *proto.Message) ([]string, *proto.Error) {
-	clsID, mtdID := msg.Method.MethodIdentifier()
+	clsID, mtdID := msg.Method.Identifier()
 	queues := make([]string, 0)
 	if ex.Name != msg.Method.(*proto.BasicPublish).Exchange {
 		return queues, proto.NewSoftError(404, "Exchange name MisMatch", clsID, mtdID)

@@ -61,8 +61,8 @@ func NewConnection(s *Server, n net.Conn) *Connection {
 }
 
 func (c *Connection) openConnection() {
-	// Protocol Handshake
 
+	// Protocol Handshake
 	buf := make([]byte, 5)
 	_, err := c.network.Read(buf)
 	if err != nil {
@@ -87,7 +87,6 @@ func (c *Connection) openConnection() {
 }
 
 func (c *Connection) hardClose() {
-
 	if c.status.closed {
 		return
 	}
