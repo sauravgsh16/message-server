@@ -26,7 +26,7 @@ type Server struct {
 }
 
 // INCASE - THE SERVER AND THE MESSAGE DB NEEDS TO BE SEPARATE - THIS IS THE POINT
-// WHERE WE ACCEPT TO DIFFERENT DB PATHS.
+// WHERE WE ACCEPT TWO DIFFERENT DB PATHS.
 func NewServer(dbFilePath, msgStoreFilePath string) *Server {
 	db, err := bolt.Open(dbFilePath, 0666, nil)
 	if err != nil {

@@ -313,8 +313,6 @@ func (ch *Channel) dispatchRpc(msgf proto.MessageFrame) *proto.Error {
 
 func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 
-	fmt.Println("Received", mf.Method.MethodName())
-
 	if msgf, ok := mf.Method.(proto.MessageContentFrame); ok {
 		ch.currentMsg = proto.NewMessage(msgf)
 		ch.bodyMf = msgf
@@ -363,11 +361,11 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 		err = proto.NewSoftError(500, "Unable to dispatch method content frame", 0, 0)
 	}
 
-	ch.resetMessages()
+	ch.resetCurMsg()
 	return err
 }
 
-func (ch *Channel) resetMessages() {
+func (ch *Channel) resetCurMsg() {
 	ch.bodyMf = nil
 	ch.currentMsg = nil
 }
