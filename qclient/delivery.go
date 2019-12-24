@@ -1,9 +1,10 @@
 package qclient
 
 import (
-	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/message-server/proto"
 )
 
+// Delivery struct
 type Delivery struct {
 	ConsumerTag string
 	DeliveryTag uint64

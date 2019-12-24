@@ -3,10 +3,11 @@ package consumer
 import (
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/store"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/store"
 )
 
+// Consumer struct
 type Consumer struct {
 	msgStore    *store.MsgStore
 	ConsumerTag string
@@ -23,10 +24,12 @@ type Consumer struct {
 	sizeMux     sync.Mutex
 }
 
+// ConsumerQueue interface
 type ConsumerQueue interface {
 	GetOne(mrh ...proto.MessageResourceHolder) (*proto.QueueMessage, *proto.Message)
 }
 
+// ChannelResource interface
 type ChannelResource interface {
 	proto.MessageResourceHolder
 	SendContent(mf proto.MessageContentFrame, msg *proto.Message) error
@@ -35,6 +38,7 @@ type ChannelResource interface {
 	GetDeliveryTag() uint64
 }
 
+// NewConsumer returns a new consumer
 func NewConsumer(ms *store.MsgStore, cr ChannelResource, consumerTag string, cq ConsumerQueue, queueName string, noAck bool, defaultSize uint32) *Consumer {
 	return &Consumer{
 		msgStore:    ms,
@@ -48,10 +52,12 @@ func NewConsumer(ms *store.MsgStore, cr ChannelResource, consumerTag string, cq 
 	}
 }
 
+// Start consumption
 func (c *Consumer) Start() {
 	go c.consume()
 }
 
+// Stop consumption
 func (c *Consumer) Stop() {
 	c.stopMux.Lock()
 	defer c.stopMux.Unlock()
@@ -61,6 +67,8 @@ func (c *Consumer) Stop() {
 		c.stopped = true
 	}
 }
+
+// Ping channel to consume
 func (c *Consumer) Ping() {
 	c.stopMux.Lock()
 	defer c.stopMux.Unlock()
@@ -73,6 +81,7 @@ func (c *Consumer) Ping() {
 	}
 }
 
+// AcquireResources checks queue for size
 func (c *Consumer) AcquireResources(qm *proto.QueueMessage) bool {
 
 	c.sizeMux.Lock()
@@ -96,6 +105,7 @@ func (c *Consumer) AcquireResources(qm *proto.QueueMessage) bool {
 	return false
 }
 
+// ReleaseResources decreases the active size count
 func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
 
 	c.sizeMux.Lock()
@@ -104,6 +114,7 @@ func (c *Consumer) ReleaseResources(qm *proto.QueueMessage) {
 	c.activeSize -= qm.MsgSize
 }
 
+// SendCancel sends a cancel call
 func (c *Consumer) SendCancel() {
 	c.chResource.Send(&proto.BasicCancel{
 		ConsumerTag: c.ConsumerTag,
@@ -111,6 +122,7 @@ func (c *Consumer) SendCancel() {
 	})
 }
 
+// ConsumeImmediate immediately consumes message
 func (c *Consumer) ConsumeImmediate(msg *proto.Message, qm *proto.QueueMessage) bool {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -133,6 +145,7 @@ func (c *Consumer) ConsumeImmediate(msg *proto.Message, qm *proto.QueueMessage) 
 	return true
 }
 
+// ResourceHolders returns all resource holder for consumer
 func (c *Consumer) ResourceHolders() []proto.MessageResourceHolder {
 	return []proto.MessageResourceHolder{c, c.chResource}
 }

@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/consumer"
-	"github.com/sauravgsh16/secoc-third/qserver/queue"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/consumer"
+	"github.com/sauravgsh16/message-server/qserver/queue"
 )
 
 const (
 	CH_INIT = iota
 	CH_OPEN
-	CH_CLOSING
-	CH_CLOSED
+	chClosing
+	chClosed
 )
 
 type Channel struct {
@@ -57,7 +57,7 @@ func (ch *Channel) Send(msgf proto.MessageFrame) error {
 
 	fmt.Printf("Sending: %s\n", msgf.MethodName())
 
-	if ch.state == CH_CLOSED {
+	if ch.state == chClosed {
 		return ch.sendClosed(msgf)
 	}
 
@@ -160,7 +160,7 @@ func (ch *Channel) start() {
 
 	go func() {
 		for {
-			if ch.state == CH_CLOSED {
+			if ch.state == chClosed {
 				break
 			}
 			var err *proto.Error
@@ -172,12 +172,12 @@ func (ch *Channel) start() {
 				err = ch.handleMethod(m)
 
 			case *proto.HeaderFrame:
-				if ch.state != CH_CLOSING {
+				if ch.state != chClosing {
 					err = ch.handleHeader(m)
 				}
 
 			case *proto.BodyFrame:
-				if ch.state != CH_CLOSING {
+				if ch.state != chClosing {
 					err = ch.handleBody(m)
 				}
 			default:
@@ -193,7 +193,7 @@ func (ch *Channel) start() {
 func (ch *Channel) sendError(err *proto.Error) {
 	if err.Soft {
 		fmt.Println("Sending channel error: ", err.Msg)
-		ch.state = CH_CLOSING
+		ch.state = chClosing
 		ch.Send(&proto.ChannelClose{
 			ReplyCode: err.Code,
 			ReplyText: err.Msg,
@@ -206,11 +206,11 @@ func (ch *Channel) sendError(err *proto.Error) {
 }
 
 func (ch *Channel) shutdown() {
-	if ch.state == CH_CLOSED {
+	if ch.state == chClosed {
 		fmt.Printf("channel already closed, shutdown performed on %d\n", ch.id)
 		return
 	}
-	ch.state = CH_CLOSED
+	ch.state = chClosed
 	// unregister channel from connection
 	ch.conn.removeChannel(ch.id)
 	// remove any consumer associated with this channel
@@ -226,7 +226,7 @@ func (ch *Channel) close(code uint16, text string, clsID uint16, mtdID uint16) {
 		ClassId:   clsID,
 		MethodId:  mtdID,
 	})
-	ch.state = CH_CLOSING
+	ch.state = chClosing
 }
 
 func (ch *Channel) startTxMode() {

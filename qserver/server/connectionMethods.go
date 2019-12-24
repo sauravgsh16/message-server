@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/message-server/proto"
 )
 
 func (ch *Channel) connRoute(conn *Connection, msgf proto.MessageFrame) *proto.Error {

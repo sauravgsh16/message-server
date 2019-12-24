@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/consumer"
-	"github.com/sauravgsh16/secoc-third/qserver/store"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/consumer"
+	"github.com/sauravgsh16/message-server/qserver/store"
 )
 
 type Queue struct {
@@ -42,7 +42,7 @@ func (q *Queue) Start() {
 		case q.readyChan <- true:
 		default:
 		}
-		for _ = range q.readyChan {
+		for range q.readyChan {
 			if q.Closed {
 				fmt.Printf("Queue Closed: %s\n", q.Name)
 				break

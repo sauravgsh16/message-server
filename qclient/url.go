@@ -6,13 +6,14 @@ import (
 	"strings"
 )
 
+// URI struct
 type URI struct {
 	scheme string
 	host   string
 	port   string
 }
 
-var defaultUri = URI{
+var defaultURI = URI{
 	scheme: "tcp",
 	host:   "localhost",
 	port:   "9000",
@@ -22,8 +23,8 @@ var errURIWhitespace = errors.New("URI contain whitespace")
 var errURIScheme = errors.New("URI Scheme should be tcp")
 var errURIInvalidPort = errors.New("URI port invalid")
 
-func parseUrl(uri string) (URI, error) {
-	du := defaultUri
+func parseURL(uri string) (URI, error) {
+	du := defaultURI
 	if strings.Contains(uri, " ") == true {
 		return du, errURIWhitespace
 	}

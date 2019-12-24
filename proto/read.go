@@ -7,10 +7,13 @@ import (
 	"io"
 )
 
+// Reader struct
 type Reader struct {
 	R io.Reader
 }
 
+// ReadFrame read the frame from the connection and dispatches call
+// according to the Frame type
 func (r Reader) ReadFrame() (frame Frame, err error) {
 
 	var incoming [7]byte
@@ -83,6 +86,7 @@ func (r Reader) readBody(channel uint16, size uint32) (Frame, error) {
 	return bf, nil
 }
 
+// ReadOctet reads 1 byte of data
 func ReadOctet(r io.Reader) (data byte, err error) {
 	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read byte: " + err.Error())
@@ -90,6 +94,7 @@ func ReadOctet(r io.Reader) (data byte, err error) {
 	return data, nil
 }
 
+// ReadShort reads 2 bytes of data
 func ReadShort(r io.Reader) (data uint16, err error) {
 	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read uint16: " + err.Error())
@@ -97,6 +102,7 @@ func ReadShort(r io.Reader) (data uint16, err error) {
 	return data, nil
 }
 
+// ReadLong reads 4 bytes of data
 func ReadLong(r io.Reader) (data uint32, err error) {
 	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("Could not read uint32: " + err.Error())
@@ -104,6 +110,7 @@ func ReadLong(r io.Reader) (data uint32, err error) {
 	return data, nil
 }
 
+// ReadLongLong reads 8 bytes of data
 func ReadLongLong(r io.Reader) (data uint64, err error) {
 	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("could not read uint64: " + err.Error())
@@ -111,6 +118,7 @@ func ReadLongLong(r io.Reader) (data uint64, err error) {
 	return data, nil
 }
 
+// ReadShortStr reads a string of 1 byte
 func ReadShortStr(r io.Reader) (data string, err error) {
 	var lenght uint8
 	if err = binary.Read(r, binary.BigEndian, &lenght); err != nil {
@@ -137,6 +145,7 @@ func readLongStr(r io.Reader) ([]byte, error) {
 	return slice, nil
 }
 
+// ReadLongStr reads a string of 4 bytes
 func ReadLongStr(r io.Reader) (string, error) {
 	slice, err := readLongStr(r)
 	if err != nil {

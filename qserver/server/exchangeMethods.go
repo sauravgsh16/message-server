@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/exchange"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/exchange"
 )
 
 func (ch *Channel) exchangeRoute(msgf proto.MessageFrame) *proto.Error {

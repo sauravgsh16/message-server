@@ -4,24 +4,29 @@ package proto
 //    CONNECTION FRAMES
 // ***********************
 
+// ConnectionStart struct
 type ConnectionStart struct {
 	Version    byte
 	Mechanisms string
 }
 
+// ConnectionStartOk struct
 type ConnectionStartOk struct {
 	Mechanism string
 	Response  string
 }
 
+// ConnectionOpen struct
 type ConnectionOpen struct {
 	Host string
 }
 
+// ConnectionOpenOk struct
 type ConnectionOpenOk struct {
 	Response string
 }
 
+// ConnectionClose struct
 type ConnectionClose struct {
 	ReplyCode uint16
 	ReplyText string
@@ -29,28 +34,34 @@ type ConnectionClose struct {
 	MethodId  uint16
 }
 
+// ConnectionCloseOk struct
 type ConnectionCloseOk struct{}
 
 // ***********************
 //      CHANNEL FRAMES
 // ***********************
 
+// ChannelOpen struct
 type ChannelOpen struct {
 	Reserved string
 }
 
+// ChannelOpenOk struct
 type ChannelOpenOk struct {
 	Response string
 }
 
+// ChannelFlow struct
 type ChannelFlow struct {
 	Active bool
 }
 
+// ChannelFlowOk struct
 type ChannelFlowOk struct {
 	Active bool
 }
 
+// ChannelClose struct
 type ChannelClose struct {
 	ReplyCode uint16
 	ReplyText string
@@ -58,28 +69,34 @@ type ChannelClose struct {
 	MethodId  uint16
 }
 
+// ChannelCloseOk struct
 type ChannelCloseOk struct{}
 
 // ***********************
 //     EXCHANGE FRAMES
 // ***********************
 
+// ExchangeDeclare struct
 type ExchangeDeclare struct {
 	Exchange string
 	Type     string
 	NoWait   bool
 }
 
+// ExchangeDeclareOk struct
 type ExchangeDeclareOk struct{}
 
+// ExchangeDelete struct
 type ExchangeDelete struct {
 	Exchange string
 	IfUnused bool
 	NoWait   bool
 }
 
+// ExchangeDeleteOk struct
 type ExchangeDeleteOk struct{}
 
+// ExchangeBind struct
 type ExchangeBind struct {
 	Destination string
 	Source      string
@@ -87,8 +104,10 @@ type ExchangeBind struct {
 	NoWait      bool
 }
 
+// ExchangeBindOk struct
 type ExchangeBindOk struct{}
 
+// ExchangeUnbind struct
 type ExchangeUnbind struct {
 	Destination string
 	Source      string
@@ -96,23 +115,27 @@ type ExchangeUnbind struct {
 	NoWait      bool
 }
 
+// ExchangeUnbindOk struct
 type ExchangeUnbindOk struct{}
 
 // ***********************
 //     EXCHANGE FRAMES
 // ***********************
 
+// QueueDeclare struct
 type QueueDeclare struct {
 	Queue  string
 	NoWait bool
 }
 
+// QueueDeclareOk struct
 type QueueDeclareOk struct {
 	Queue       string
 	MessageCnt  uint32
 	ConsumerCnt uint32
 }
 
+// QueueBind struct
 type QueueBind struct {
 	Queue      string
 	Exchange   string
@@ -120,16 +143,20 @@ type QueueBind struct {
 	NoWait     bool
 }
 
+// QueueBindOk struct
 type QueueBindOk struct{}
 
+// QueueUnbind struct
 type QueueUnbind struct {
 	Queue      string
 	Exchange   string
 	RoutingKey string
 }
 
+// QueueUnbindOk struct
 type QueueUnbindOk struct{}
 
+// QueueDelete struct
 type QueueDelete struct {
 	Queue    string
 	IfUnused bool
@@ -137,6 +164,7 @@ type QueueDelete struct {
 	NoWait   bool
 }
 
+// QueueDeleteOk struct
 type QueueDeleteOk struct {
 	MessageCnt uint32
 }
@@ -145,6 +173,7 @@ type QueueDeleteOk struct {
 //     BASIC FRAMES
 // ***********************
 
+// BasicConsume struct
 type BasicConsume struct {
 	Queue       string
 	ConsumerTag string
@@ -152,19 +181,23 @@ type BasicConsume struct {
 	NoWait      bool
 }
 
+// BasicConsumeOk struct
 type BasicConsumeOk struct {
 	ConsumerTag string
 }
 
+// BasicCancel struct
 type BasicCancel struct {
 	ConsumerTag string
 	NoWait      bool
 }
 
+// BasicCancelOk struct
 type BasicCancelOk struct {
 	ConsumerTag string
 }
 
+// BasicPublish struct
 type BasicPublish struct {
 	Exchange   string
 	RoutingKey string
@@ -172,6 +205,7 @@ type BasicPublish struct {
 	Body       []byte
 }
 
+// BasicReturn struct
 type BasicReturn struct {
 	ReplyCode  uint16
 	ReplyText  string
@@ -180,6 +214,7 @@ type BasicReturn struct {
 	Body       []byte
 }
 
+// BasicDeliver struct
 type BasicDeliver struct {
 	ConsumerTag string
 	DeliveryTag uint64
@@ -188,11 +223,13 @@ type BasicDeliver struct {
 	Body        []byte
 }
 
+// BasicAck struct
 type BasicAck struct {
 	DeliveryTag uint64
 	Multiple    bool
 }
 
+// BasicNack struct
 type BasicNack struct {
 	DeliveryTag uint64
 	Multiple    bool
@@ -203,14 +240,20 @@ type BasicNack struct {
 //    	TX FRAMES
 // ***********************
 
+// TxSelect struct
 type TxSelect struct{}
 
+// TxSelectOk struct
 type TxSelectOk struct{}
 
+// TxCommit struct
 type TxCommit struct{}
 
+// TxCommitOk struct
 type TxCommitOk struct{}
 
+// TxRollback struct
 type TxRollback struct{}
 
+// TxRollbackOk struct
 type TxRollbackOk struct{}

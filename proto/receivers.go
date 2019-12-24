@@ -11,18 +11,22 @@ import (
 
 // ** ConnectionStart **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionStart) Identifier() (uint16, uint16) {
 	return 10, 10
 }
 
-func (f *ConnectionStart) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionStart) MethodName() string {
 	return "ConnectionStart"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionStart) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionStart) Wait() bool {
 	return true
 }
@@ -56,18 +60,22 @@ func (f *ConnectionStart) Write(w io.Writer) (err error) {
 
 // ** ConnectionStartOk **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionStartOk) Identifier() (uint16, uint16) {
 	return 10, 11
 }
 
-func (f *ConnectionStartOk) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionStartOk) MethodName() string {
 	return "ConnectionStartOk"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionStartOk) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionStartOk) Wait() bool {
 	return true
 }
@@ -99,18 +107,22 @@ func (f *ConnectionStartOk) Write(w io.Writer) (err error) {
 
 // ** ConnectionOpen **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionOpen) Identifier() (uint16, uint16) {
 	return 10, 20
 }
 
-func (f *ConnectionOpen) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionOpen) MethodName() string {
 	return "ConnectionOpen"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionOpen) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionOpen) Wait() bool {
 	return true
 }
@@ -133,18 +145,22 @@ func (f *ConnectionOpen) Write(w io.Writer) (err error) {
 
 // ** ConnectionOpenOk **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionOpenOk) Identifier() (uint16, uint16) {
 	return 10, 21
 }
 
-func (f *ConnectionOpenOk) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionOpenOk) MethodName() string {
 	return "ConnectionOpenOk"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionOpenOk) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionOpenOk) Wait() bool {
 	return true
 }
@@ -167,18 +183,22 @@ func (f *ConnectionOpenOk) Write(w io.Writer) (err error) {
 
 // ** ConnectionClose **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionClose) Identifier() (uint16, uint16) {
 	return 10, 30
 }
 
-func (f *ConnectionClose) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionClose) MethodName() string {
 	return "ConnectionClose"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionClose) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionClose) Wait() bool {
 	return true
 }
@@ -228,18 +248,22 @@ func (f *ConnectionClose) Write(w io.Writer) (err error) {
 
 // ** ConnectionCloseOk **
 
+// Identifier returns the class ID and method ID
 func (f *ConnectionCloseOk) Identifier() (uint16, uint16) {
 	return 10, 31
 }
 
-func (f *ConnectionCloseOk) FrameType() byte {
-	return 1
-}
-
+// MethodName returns a the name of the Method
 func (f *ConnectionCloseOk) MethodName() string {
 	return "ConnectionCloseOk"
 }
 
+// FrameType returns the frame type of the method
+func (f *ConnectionCloseOk) FrameType() byte {
+	return 1
+}
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *ConnectionCloseOk) Wait() bool {
 	return true
 }
@@ -257,20 +281,24 @@ func (f *ConnectionCloseOk) Write(w io.Writer) (err error) {
 //    CHANNEL SPECS
 // *******************
 
-// ChannelOpen
+// **ChannelOpen**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelOpen) Identifier() (uint16, uint16) {
 	return 20, 10
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelOpen) MethodName() string {
 	return "ChannelOpen"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelOpen) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelOpen) Wait() bool {
 	return true
 }
@@ -291,20 +319,24 @@ func (f *ChannelOpen) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// ChannelOpenOk
+// **ChannelOpenOk**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelOpenOk) Identifier() (uint16, uint16) {
 	return 20, 11
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelOpenOk) MethodName() string {
 	return "ChannelOpenOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelOpenOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelOpenOk) Wait() bool {
 	return true
 }
@@ -325,20 +357,24 @@ func (f *ChannelOpenOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// ChannelFlow
+// **ChannelFlow**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelFlow) Identifier() (uint16, uint16) {
 	return 20, 20
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelFlow) MethodName() string {
 	return "ChannelFlow"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelFlow) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelFlow) Wait() bool {
 	return true
 }
@@ -364,20 +400,24 @@ func (f *ChannelFlow) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// ChannelFlowOk
+// **ChannelFlowOk**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelFlowOk) Identifier() (uint16, uint16) {
 	return 20, 21
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelFlowOk) MethodName() string {
 	return "ChannelFlowOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelFlowOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelFlowOk) Wait() bool {
 	return false
 }
@@ -403,20 +443,24 @@ func (f *ChannelFlowOk) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// ChannelClose
+// **ChannelClose**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelClose) Identifier() (uint16, uint16) {
 	return 20, 30
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelClose) MethodName() string {
 	return "ChannelClose"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelClose) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelClose) Wait() bool {
 	return true
 }
@@ -464,20 +508,24 @@ func (f *ChannelClose) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// ChannelCloseOk
+// **ChannelCloseOk**
 
+// Identifier returns the class ID and method ID
 func (f *ChannelCloseOk) Identifier() (uint16, uint16) {
 	return 20, 31
 }
 
+// MethodName returns a the name of the Method
 func (f *ChannelCloseOk) MethodName() string {
 	return "ChannelCloseOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ChannelCloseOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ChannelCloseOk) Wait() bool {
 	return true
 }
@@ -495,20 +543,24 @@ func (f *ChannelCloseOk) Write(w io.Writer) (err error) {
 //    EXCHANGE SPECS
 // *******************
 
-// ExchangeDeclare
+// **ExchangeDeclare**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeDeclare) Identifier() (uint16, uint16) {
 	return 30, 10
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeDeclare) MethodName() string {
 	return "ExchangeDeclare"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeDeclare) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeDeclare) Wait() bool {
 	return true && !f.NoWait
 }
@@ -555,20 +607,24 @@ func (f *ExchangeDeclare) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// ExchangeDeclareOk
+// **ExchangeDeclareOk**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeDeclareOk) Identifier() (uint16, uint16) {
 	return 30, 11
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeDeclareOk) MethodName() string {
 	return "ExchangeDeclareOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeDeclareOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeDeclareOk) Wait() bool {
 	return true
 }
@@ -582,20 +638,24 @@ func (f *ExchangeDeclareOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeDelete
+// **ExchangeDelete**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeDelete) Identifier() (uint16, uint16) {
 	return 30, 20
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeDelete) MethodName() string {
 	return "ExchangeDelete"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeDelete) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeDelete) Wait() bool {
 	return true && !f.NoWait
 }
@@ -639,20 +699,24 @@ func (f *ExchangeDelete) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeDeleteOk
+// **ExchangeDeleteOk**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeDeleteOk) Identifier() (uint16, uint16) {
 	return 30, 21
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeDeleteOk) MethodName() string {
 	return "ExchangeDeleteOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeDeleteOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeDeleteOk) Wait() bool {
 	return true
 }
@@ -666,20 +730,24 @@ func (f *ExchangeDeleteOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeBind
+// **ExchangeBind**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeBind) Identifier() (uint16, uint16) {
 	return 30, 30
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeBind) MethodName() string {
 	return "ExchangeBind"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeBind) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeBind) Wait() bool {
 	return true && !f.NoWait
 }
@@ -736,20 +804,24 @@ func (f *ExchangeBind) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeBindOk
+// **ExchangeBindOk**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeBindOk) Identifier() (uint16, uint16) {
 	return 30, 31
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeBindOk) MethodName() string {
 	return "ExchangeBindOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeBindOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeBindOk) Wait() bool {
 	return true
 }
@@ -763,20 +835,24 @@ func (f *ExchangeBindOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeUnbind
+// **ExchangeUnbind**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeUnbind) Identifier() (uint16, uint16) {
 	return 30, 40
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeUnbind) MethodName() string {
 	return "ExchangeUnbind"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeUnbind) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeUnbind) Wait() bool {
 	return true && !f.NoWait
 }
@@ -833,20 +909,24 @@ func (f *ExchangeUnbind) Write(w io.Writer) (err error) {
 	return
 }
 
-// ExchangeUnbindOk
+// **ExchangeUnbindOk**
 
+// Identifier returns the class ID and method ID
 func (f *ExchangeUnbindOk) Identifier() (uint16, uint16) {
 	return 30, 41
 }
 
+// MethodName returns a the name of the Method
 func (f *ExchangeUnbindOk) MethodName() string {
 	return "ExchangeUnbindOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *ExchangeUnbindOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *ExchangeUnbindOk) Wait() bool {
 	return true
 }
@@ -872,20 +952,24 @@ func (f *ExchangeUnbindOk) Write(w io.Writer) (err error) {
 //        QueueDeleteOk  - 41
 // *******************
 
-// QueueDeclare
+// **QueueDeclare**
 
+// Identifier returns the class ID and method ID
 func (f *QueueDeclare) Identifier() (uint16, uint16) {
 	return 40, 10
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueDeclare) MethodName() string {
 	return "QueueDeclare"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueDeclare) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueDeclare) Wait() bool {
 	return true && !f.NoWait
 }
@@ -923,19 +1007,24 @@ func (f *QueueDeclare) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueDeclareOk
+// **QueueDeclareOk**
 
+// Identifier returns the class ID and method ID
 func (f *QueueDeclareOk) Identifier() (uint16, uint16) {
 	return 40, 11
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueDeclareOk) MethodName() string {
 	return "QueueDeclareOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueDeclareOk) FrameType() byte {
 	return 1
 }
+
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueDeclareOk) Wait() bool {
 	return true
 }
@@ -976,20 +1065,24 @@ func (f *QueueDeclareOk) Write(w io.Writer) (err error) {
 
 }
 
-// QueueBind
+// **QueueBind**
 
+// Identifier returns the class ID and method ID
 func (f *QueueBind) Identifier() (uint16, uint16) {
 	return 40, 20
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueBind) MethodName() string {
 	return "QueueBind"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueBind) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueBind) Wait() bool {
 	return true && !f.NoWait
 }
@@ -1045,20 +1138,24 @@ func (f *QueueBind) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueBindOk
+// **QueueBindOk**
 
+// Identifier returns the class ID and method ID
 func (f *QueueBindOk) Identifier() (uint16, uint16) {
 	return 40, 21
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueBindOk) MethodName() string {
 	return "QueueBindOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueBindOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueBindOk) Wait() bool {
 	return true
 }
@@ -1072,20 +1169,24 @@ func (f *QueueBindOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueUnbind
+// **QueueUnbind**
 
+// Identifier returns the class ID and method ID
 func (f *QueueUnbind) Identifier() (uint16, uint16) {
 	return 40, 30
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueUnbind) MethodName() string {
 	return "QueueUnbind"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueUnbind) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueUnbind) Wait() bool {
 	return true
 }
@@ -1125,20 +1226,24 @@ func (f *QueueUnbind) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueUnbindOk
+// **QueueUnbindOk**
 
+// Identifier returns the class ID and method ID
 func (f *QueueUnbindOk) Identifier() (uint16, uint16) {
 	return 40, 31
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueUnbindOk) MethodName() string {
 	return "QueueUnbindOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueUnbindOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueUnbindOk) Wait() bool {
 	return true
 }
@@ -1152,20 +1257,24 @@ func (f *QueueUnbindOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueDelete
+// **QueueDelete**
 
+// Identifier returns the class ID and method ID
 func (f *QueueDelete) Identifier() (uint16, uint16) {
 	return 40, 40
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueDelete) MethodName() string {
 	return "QueueDelete"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueDelete) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueDelete) Wait() bool {
 	return true && !f.NoWait
 }
@@ -1211,20 +1320,24 @@ func (f *QueueDelete) Write(w io.Writer) (err error) {
 	return
 }
 
-// QueueDeleteOk
+// **QueueDeleteOk**
 
+// Identifier returns the class ID and method ID
 func (f *QueueDeleteOk) Identifier() (uint16, uint16) {
 	return 40, 41
 }
 
+// MethodName returns a the name of the Method
 func (f *QueueDeleteOk) MethodName() string {
 	return "QueueDeleteOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *QueueDeleteOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *QueueDeleteOk) Wait() bool {
 	return true
 }
@@ -1259,20 +1372,24 @@ func (f *QueueDeleteOk) Write(w io.Writer) (err error) {
 //        basicNack    - 70
 // *******************
 
-// BasicConsume
+// ** BasicConsume **
 
+// Identifier returns the class ID and method ID
 func (f *BasicConsume) Identifier() (uint16, uint16) {
 	return 50, 10
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicConsume) MethodName() string {
 	return "BasicConsume"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicConsume) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicConsume) Wait() bool {
 	return true && !f.NoWait
 }
@@ -1324,20 +1441,24 @@ func (f *BasicConsume) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicConsumeOk
+// **BasicConsumeOk**
 
+// Identifier returns the class ID and method ID
 func (f *BasicConsumeOk) Identifier() (uint16, uint16) {
 	return 50, 11
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicConsumeOk) MethodName() string {
 	return "BasicConsumeOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicConsumeOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicConsumeOk) Wait() bool {
 	return true
 }
@@ -1359,20 +1480,24 @@ func (f *BasicConsumeOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicCancel
+// **BasicCancel**'
 
+// Identifier returns the class ID and method ID
 func (f *BasicCancel) Identifier() (uint16, uint16) {
 	return 50, 20
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicCancel) MethodName() string {
 	return "BasicCancel"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicCancel) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicCancel) Wait() bool {
 	return true
 }
@@ -1410,20 +1535,24 @@ func (f *BasicCancel) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicCancelOk
+// **BasicCancelOk**
 
+// Identifier returns the class ID and method ID
 func (f *BasicCancelOk) Identifier() (uint16, uint16) {
 	return 50, 21
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicCancelOk) MethodName() string {
 	return "BasicCancelOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicCancelOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicCancelOk) Wait() bool {
 	return true
 }
@@ -1445,28 +1574,34 @@ func (f *BasicCancelOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicPublish
+// ** BasicPublish **
 
+// Identifier returns the class ID and method ID
 func (f *BasicPublish) Identifier() (uint16, uint16) {
 	return 50, 30
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicPublish) MethodName() string {
 	return "BasicPublish"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicPublish) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicPublish) Wait() bool {
 	return false
 }
 
+// GetBody gets the method frame body
 func (f *BasicPublish) GetBody() []byte {
 	return f.Body
 }
 
+// SetBody sets the method frame body
 func (f *BasicPublish) SetBody(b []byte) {
 	f.Body = b
 }
@@ -1514,28 +1649,34 @@ func (f *BasicPublish) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicReturn
+// ** BasicReturn **
 
+// Identifier returns the class ID and method ID
 func (f *BasicReturn) Identifier() (uint16, uint16) {
 	return 50, 40
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicReturn) MethodName() string {
 	return "BasicReturn"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicReturn) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicReturn) Wait() bool {
 	return false
 }
 
+// GetBody gets the method frame body
 func (f *BasicReturn) GetBody() []byte {
 	return f.Body
 }
 
+// SetBody sets the method frame body
 func (f *BasicReturn) SetBody(b []byte) {
 	f.Body = b
 }
@@ -1584,28 +1725,34 @@ func (f *BasicReturn) Write(w io.Writer) (err error) {
 	return nil
 }
 
-// BasicDeliver
+// ** BasicDeliver **
 
+// Identifier returns the class ID and method ID
 func (f *BasicDeliver) Identifier() (uint16, uint16) {
 	return 50, 50
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicDeliver) MethodName() string {
 	return "BasicDeliver"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicDeliver) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicDeliver) Wait() bool {
 	return false
 }
 
+// GetBody gets the method frame body
 func (f *BasicDeliver) GetBody() []byte {
 	return f.Body
 }
 
+// SetBody sets the method frame body
 func (f *BasicDeliver) SetBody(b []byte) {
 	f.Body = b
 }
@@ -1654,20 +1801,24 @@ func (f *BasicDeliver) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicAck
+// ** BasicAck **
 
+// Identifier returns the class ID and method ID
 func (f *BasicAck) Identifier() (uint16, uint16) {
 	return 50, 60
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicAck) MethodName() string {
 	return "BasicAck"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicAck) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicAck) Wait() bool {
 	return false
 }
@@ -1705,20 +1856,24 @@ func (f *BasicAck) Write(w io.Writer) (err error) {
 	return
 }
 
-// BasicNack
+// ** BasicNack **
 
+// Identifier returns the class ID and method ID
 func (f *BasicNack) Identifier() (uint16, uint16) {
 	return 50, 70
 }
 
+// MethodName returns a the name of the Method
 func (f *BasicNack) MethodName() string {
 	return "BasicNack"
 }
 
+// FrameType returns the frame type of the method
 func (f *BasicNack) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *BasicNack) Wait() bool {
 	return false
 }
@@ -1771,20 +1926,24 @@ func (f *BasicNack) Write(w io.Writer) (err error) {
 //	 TxRollbackOk - 31
 // *******************
 
-// TxSelect
+// ** TxSelect **
 
+// Identifier returns the class ID and method ID
 func (f *TxSelect) Identifier() (uint16, uint16) {
 	return 60, 10
 }
 
+// MethodName returns a the name of the Method
 func (f *TxSelect) MethodName() string {
 	return "TxSelect"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxSelect) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxSelect) Wait() bool {
 	return true
 }
@@ -1797,20 +1956,24 @@ func (f *TxSelect) Write(w io.Writer) (err error) {
 	return
 }
 
-// TxSelectOk
+// ** TxSelectOk **
 
+// Identifier returns the class ID and method ID
 func (f *TxSelectOk) Identifier() (uint16, uint16) {
 	return 60, 11
 }
 
+// MethodName returns a the name of the Method
 func (f *TxSelectOk) MethodName() string {
 	return "TxSelectOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxSelectOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxSelectOk) Wait() bool {
 	return true
 }
@@ -1823,20 +1986,24 @@ func (f *TxSelectOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// TxCommit
+// ** TxCommit **
 
+// Identifier returns the class ID and method ID
 func (f *TxCommit) Identifier() (uint16, uint16) {
 	return 60, 20
 }
 
+// MethodName returns a the name of the Method
 func (f *TxCommit) MethodName() string {
 	return "TxCommit"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxCommit) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxCommit) Wait() bool {
 	return true
 }
@@ -1849,20 +2016,24 @@ func (f *TxCommit) Write(w io.Writer) (err error) {
 	return
 }
 
-// TxCommitOk
+// ** TxCommitOk **
 
+// Identifier returns the class ID and method ID
 func (f *TxCommitOk) Identifier() (uint16, uint16) {
 	return 60, 21
 }
 
+// MethodName returns a the name of the Method
 func (f *TxCommitOk) MethodName() string {
 	return "TxCommitOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxCommitOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxCommitOk) Wait() bool {
 	return true
 }
@@ -1875,20 +2046,24 @@ func (f *TxCommitOk) Write(w io.Writer) (err error) {
 	return
 }
 
-// TxRollback
+// ** TxRollback **
 
+// Identifier returns the class ID and method ID
 func (f *TxRollback) Identifier() (uint16, uint16) {
 	return 60, 30
 }
 
+// MethodName returns a the name of the Method
 func (f *TxRollback) MethodName() string {
 	return "TxRollback"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxRollback) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxRollback) Wait() bool {
 	return true
 }
@@ -1901,20 +2076,24 @@ func (f *TxRollback) Write(w io.Writer) (err error) {
 	return
 }
 
-// TxRollbackOk
+// ** TxRollbackOk **
 
+// Identifier returns the class ID and method ID
 func (f *TxRollbackOk) Identifier() (uint16, uint16) {
 	return 60, 31
 }
 
+// MethodName returns a the name of the Method
 func (f *TxRollbackOk) MethodName() string {
 	return "TxRollbackOk"
 }
 
+// FrameType returns the frame type of the method
 func (f *TxRollbackOk) FrameType() byte {
 	return 1
 }
 
+// Wait returns a boolean signifying if the method need any wait
 func (f *TxRollbackOk) Wait() bool {
 	return true
 }

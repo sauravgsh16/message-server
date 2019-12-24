@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/binding"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/binding"
 )
 
 const (

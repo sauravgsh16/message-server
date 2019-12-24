@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// Error struct
 type Error struct {
 	Code   uint16
 	Class  uint16
@@ -12,6 +13,7 @@ type Error struct {
 	Soft   bool
 }
 
+// NewSoftError returns a soft error
 func NewSoftError(code uint16, msg string, class uint16, method uint16) *Error {
 	return &Error{
 		Code:   code,
@@ -22,6 +24,7 @@ func NewSoftError(code uint16, msg string, class uint16, method uint16) *Error {
 	}
 }
 
+// NewHardError returns an fatal error
 func NewHardError(code uint16, msg string, class uint16, method uint16) *Error {
 	return &Error{
 		Code:   code,

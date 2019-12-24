@@ -5,20 +5,23 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/message-server/proto"
 )
 
 const (
-	CH_INIT = iota
-	CH_OPEN
-	CH_CLOSING
-	CH_CLOSED
+	// Channel status
+	chInit = iota
+	chOpen
+	chClosing
+	chClosed
 )
 
-// TO MOVE TO RELEVANT PLACE
-// ****************************************
+// TODO: MOVE TO RELEVANT PLACE
+
+// Return struct
 type Return struct{}
 
+// Confirmation struct
 type Confirmation struct {
 	DeliveryTag uint64
 	State       bool
@@ -28,8 +31,9 @@ type confirms struct{}
 
 func (c *confirms) AddListener(ch chan Confirmation) {}
 
-// *****************************************
+// TODO: to move code ends here
 
+// Channel struct
 type Channel struct {
 	id         uint16
 	destructor sync.Once
@@ -101,7 +105,7 @@ func (ch *Channel) send(msgf proto.MessageFrame) error {
 
 	fmt.Printf("Sending: %s\n", msgf.MethodName())
 
-	if ch.state == CH_CLOSED {
+	if ch.state == chClosed {
 		return ch.sendClosed(msgf)
 	}
 
@@ -189,7 +193,7 @@ func (ch *Channel) shutdown(err *proto.Error) {
 			}
 		}
 
-		ch.state = CH_CLOSED
+		ch.state = chClosed
 
 		// Notify select loop for ch.rpc
 		if err != nil {
@@ -225,11 +229,11 @@ func (ch *Channel) shutdown(err *proto.Error) {
 
 func (ch *Channel) startReceiver() {
 	if ch.state == 0 {
-		ch.state = CH_OPEN
+		ch.state = chOpen
 	}
 	go func() {
 		for {
-			if ch.state == CH_CLOSED {
+			if ch.state == chClosed {
 				break
 			}
 			var err *proto.Error
@@ -246,12 +250,12 @@ func (ch *Channel) startReceiver() {
 					err = ch.handleMethod(m)
 
 				case *proto.HeaderFrame:
-					if ch.state != CH_CLOSING {
+					if ch.state != chClosing {
 						err = ch.handleHeader(m)
 					}
 
 				case *proto.BodyFrame:
-					if ch.state != CH_CLOSING {
+					if ch.state != chClosing {
 						err = ch.handleBody(m)
 					}
 
@@ -266,7 +270,7 @@ func (ch *Channel) startReceiver() {
 	}()
 }
 
-func (ch *Channel) dispatchRpc(msgf proto.MessageFrame) *proto.Error {
+func (ch *Channel) dispatchRPC(msgf proto.MessageFrame) *proto.Error {
 
 	switch m := msgf.(type) {
 
@@ -318,7 +322,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 		ch.bodyMf = msgf
 	}
 
-	ch.dispatchRpc(mf.Method)
+	ch.dispatchRPC(mf.Method)
 	return nil
 }
 
@@ -357,7 +361,7 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 
 	var err *proto.Error
 
-	if err := ch.dispatchRpc(ch.bodyMf); err != nil {
+	if err := ch.dispatchRPC(ch.bodyMf); err != nil {
 		err = proto.NewSoftError(500, "Unable to dispatch method content frame", 0, 0)
 	}
 
@@ -370,6 +374,7 @@ func (ch *Channel) resetCurMsg() {
 	ch.currentMsg = nil
 }
 
+// Close signals done channel to close. Also closes connection
 func (ch *Channel) Close() error {
 	err := ch.call(
 		&proto.ChannelClose{ReplyCode: 200},
@@ -380,6 +385,7 @@ func (ch *Channel) Close() error {
 	return err
 }
 
+// Flow calls ChannelFlow and exprets ChannelFlowOk
 func (ch *Channel) Flow(active bool) error {
 	return ch.call(
 		&proto.ChannelFlow{Active: active},
@@ -387,6 +393,7 @@ func (ch *Channel) Flow(active bool) error {
 	)
 }
 
+// NotifyClose appends notification channel to closing list
 func (ch *Channel) NotifyClose(c chan *proto.Error) chan *proto.Error {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -399,6 +406,7 @@ func (ch *Channel) NotifyClose(c chan *proto.Error) chan *proto.Error {
 	return c
 }
 
+// NotifyReturn appends return channel to returns list
 func (ch *Channel) NotifyReturn(c chan Return) chan Return {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -411,6 +419,7 @@ func (ch *Channel) NotifyReturn(c chan Return) chan Return {
 	return c
 }
 
+// NotifyFlow appends flow channel to flow list
 func (ch *Channel) NotifyFlow(c chan bool) chan bool {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -423,6 +432,7 @@ func (ch *Channel) NotifyFlow(c chan bool) chan bool {
 	return c
 }
 
+// NotifyCancel appends cancel channel to cancels list
 func (ch *Channel) NotifyCancel(c chan string) chan string {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -435,6 +445,7 @@ func (ch *Channel) NotifyCancel(c chan string) chan string {
 	return c
 }
 
+// NotifyConfirm confirms the message delivery
 func (ch *Channel) NotifyConfirm(ack, nack chan uint64) (chan uint64, chan uint64) {
 	confirm := ch.NotifyPublish(make(chan Confirmation, len(ack)+len(nack)))
 
@@ -454,6 +465,7 @@ func (ch *Channel) NotifyConfirm(ack, nack chan uint64) (chan uint64, chan uint6
 	return ack, nack
 }
 
+// NotifyPublish confirms message publish
 func (ch *Channel) NotifyPublish(c chan Confirmation) chan Confirmation {
 	ch.notifyMux.Lock()
 	defer ch.notifyMux.Unlock()
@@ -466,6 +478,7 @@ func (ch *Channel) NotifyPublish(c chan Confirmation) chan Confirmation {
 	return c
 }
 
+// ExchangeDeclare declares an exchange
 func (ch *Channel) ExchangeDeclare(name, etype string, noWait bool) error {
 	return ch.call(
 		&proto.ExchangeDeclare{
@@ -477,6 +490,7 @@ func (ch *Channel) ExchangeDeclare(name, etype string, noWait bool) error {
 	)
 }
 
+// ExchangeBind binds an exchange to a routing key
 func (ch *Channel) ExchangeBind(dest, src, routingKey string, noWait bool) error {
 	return ch.call(
 		&proto.ExchangeBind{
@@ -489,6 +503,7 @@ func (ch *Channel) ExchangeBind(dest, src, routingKey string, noWait bool) error
 	)
 }
 
+// ExchangeUnbind unbinds an exchange
 func (ch *Channel) ExchangeUnbind(dest, src, routingKey string, noWait bool) error {
 	return ch.call(
 		&proto.ExchangeUnbind{
@@ -501,6 +516,7 @@ func (ch *Channel) ExchangeUnbind(dest, src, routingKey string, noWait bool) err
 	)
 }
 
+// ExchangeDelete deletes an exchange
 func (ch *Channel) ExchangeDelete(name string, ifunused, noWait bool) error {
 	return ch.call(
 		&proto.ExchangeDelete{
@@ -512,6 +528,7 @@ func (ch *Channel) ExchangeDelete(name string, ifunused, noWait bool) error {
 	)
 }
 
+// QueueDeclare declares a queue
 func (ch *Channel) QueueDeclare(name string, noWait bool) (*proto.QueueDeclareOk, error) {
 	req := &proto.QueueDeclare{
 		Queue:  name,
@@ -528,6 +545,7 @@ func (ch *Channel) QueueDeclare(name string, noWait bool) (*proto.QueueDeclareOk
 	return &proto.QueueDeclareOk{Queue: name}, nil
 }
 
+// QueueBind binds a queue
 func (ch *Channel) QueueBind(name, exchange, key string, noWait bool) error {
 	return ch.call(
 		&proto.QueueBind{
@@ -540,6 +558,7 @@ func (ch *Channel) QueueBind(name, exchange, key string, noWait bool) error {
 	)
 }
 
+// QueueUnbind unbinds queue
 func (ch *Channel) QueueUnbind(name, exchange, key string) error {
 	return ch.call(
 		&proto.QueueUnbind{
@@ -551,6 +570,7 @@ func (ch *Channel) QueueUnbind(name, exchange, key string) error {
 	)
 }
 
+// QueueDelete deletes queue
 func (ch *Channel) QueueDelete(name string, ifunused, ifempty, noWait bool) (int, error) {
 	req := &proto.QueueDelete{
 		Queue:    name,
@@ -562,6 +582,7 @@ func (ch *Channel) QueueDelete(name string, ifunused, ifempty, noWait bool) (int
 	return int(resp.MessageCnt), ch.call(req, resp)
 }
 
+// Publish a message
 func (ch *Channel) Publish(exchange, key string, immediate bool, body []byte) error {
 	bp := &proto.BasicPublish{
 		Exchange:   exchange,
@@ -577,6 +598,7 @@ func (ch *Channel) Publish(exchange, key string, immediate bool, body []byte) er
 	return nil
 }
 
+// Cancel a consumer
 func (ch *Channel) Cancel(tag string, noWait bool) error {
 	req := &proto.BasicCancel{
 		ConsumerTag: tag,
@@ -591,6 +613,7 @@ func (ch *Channel) Cancel(tag string, noWait bool) error {
 	return nil
 }
 
+// Consume messages
 func (ch *Channel) Consume(queue, consumer string, noAck, noWait bool) (<-chan Delivery, error) {
 	req := &proto.BasicConsume{
 		Queue:       queue,
@@ -611,6 +634,7 @@ func (ch *Channel) Consume(queue, consumer string, noAck, noWait bool) (<-chan D
 	return dChan, nil
 }
 
+// Ack message
 func (ch *Channel) Ack(tag uint64, multiple bool) error {
 	ch.sendMux.Lock()
 	defer ch.sendMux.Unlock()
@@ -621,6 +645,7 @@ func (ch *Channel) Ack(tag uint64, multiple bool) error {
 	})
 }
 
+// Nack not ack
 func (ch *Channel) Nack(tag uint64, multiple bool, requeue bool) error {
 	ch.sendMux.Lock()
 	defer ch.sendMux.Unlock()
@@ -632,6 +657,7 @@ func (ch *Channel) Nack(tag uint64, multiple bool, requeue bool) error {
 	})
 }
 
+// TxSelect transaction select
 func (ch *Channel) TxSelect() error {
 	return ch.call(
 		&proto.TxSelect{},
@@ -639,6 +665,7 @@ func (ch *Channel) TxSelect() error {
 	)
 }
 
+// TxCommit transaction commit
 func (ch *Channel) TxCommit() error {
 	return ch.call(
 		&proto.TxCommit{},
@@ -646,6 +673,7 @@ func (ch *Channel) TxCommit() error {
 	)
 }
 
+// TxRollBack transaction rollback
 func (ch *Channel) TxRollBack() error {
 	return ch.call(
 		&proto.TxRollback{},

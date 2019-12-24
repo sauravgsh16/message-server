@@ -5,7 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 
-	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/message-server/proto"
 )
 
 // Binding struct
@@ -48,10 +48,14 @@ func (b *Binding) Equals(b2 *Binding) bool {
 	return true
 }
 
+// CheckDirectMatches checks if the binding exchange and routing key
+// matches with the exchange and routing key of the message for direct binding
 func (b *Binding) CheckDirectMatches(m *proto.BasicPublish) bool {
 	return b.Exchange == m.Exchange && b.Key == m.RoutingKey
 }
 
+// CheckFanoutMatches checks if the binding exchange
+// matches with the exchange of the message for fanout binding
 func (b *Binding) CheckFanoutMatches(m *proto.BasicPublish) bool {
 	return b.Exchange == m.Exchange
 }

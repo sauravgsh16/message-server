@@ -3,9 +3,9 @@ package server
 import (
 	"fmt"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/binding"
-	"github.com/sauravgsh16/secoc-third/qserver/queue"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/binding"
+	"github.com/sauravgsh16/message-server/qserver/queue"
 )
 
 func (ch *Channel) queueRoute(msgf proto.MessageFrame) *proto.Error {

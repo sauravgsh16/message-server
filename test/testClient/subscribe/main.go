@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sauravgsh16/secoc-third/qclient"
+	"github.com/sauravgsh16/message-server/qclient"
 )
 
 func failOnError(err error, msg string) {

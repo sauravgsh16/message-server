@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sauravgsh16/secoc-third/allocate"
-	"github.com/sauravgsh16/secoc-third/proto"
+	"github.com/sauravgsh16/message-server/allocate"
+	"github.com/sauravgsh16/message-server/proto"
 )
 
 const defaultConnTimeout = 30 * time.Second
@@ -24,6 +24,7 @@ var (
 	ErrHost           = errors.New("Corrupt HostName")
 )
 
+// ConnectionStatus represents connection status
 type ConnectionStatus struct {
 	start    bool
 	startOk  bool
@@ -34,6 +35,7 @@ type ConnectionStatus struct {
 	closedOk bool
 }
 
+// Connection struct
 type Connection struct {
 	destructor sync.Once
 	sendMux    sync.Mutex
@@ -49,12 +51,13 @@ type Connection struct {
 	writer     *proto.Writer
 }
 
+// Dial to connect to a listener
 func Dial(url string) (*Connection, error) {
 	return dial(url)
 }
 
 func dial(url string) (*Connection, error) {
-	uri, err := parseUrl(url)
+	uri, err := parseURL(url)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +77,7 @@ func dialer(netType, addr string, timeout time.Duration) (net.Conn, error) {
 	return conn, nil
 }
 
+// Open a connection
 func Open(conn io.ReadWriteCloser) (*Connection, error) {
 	c := &Connection{
 		conn:     conn,
@@ -89,13 +93,14 @@ func Open(conn io.ReadWriteCloser) (*Connection, error) {
 	return c, c.open()
 }
 
-// Connection method receivers
+// IsClosed return if connection is closed
 func (c *Connection) IsClosed() bool {
 	c.statusMux.Lock()
 	defer c.statusMux.Unlock()
 	return c.status.closed
 }
 
+// Close connection
 func (c *Connection) Close() error {
 	if c.IsClosed() {
 		return ErrClosed
@@ -380,6 +385,7 @@ func (c *Connection) closeChannel(ch *Channel, err *proto.Error) {
 	c.releaseChannel(ch.id)
 }
 
+// Channel opens a channel for the connection
 func (c *Connection) Channel() (*Channel, error) {
 	return c.openChannel()
 }

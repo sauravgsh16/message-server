@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sauravgsh16/secoc-third/constant"
-	"github.com/sauravgsh16/secoc-third/qserver/server"
+	"github.com/sauravgsh16/message-server/constant"
+	"github.com/sauravgsh16/message-server/qserver/server"
 )
 
 func handleConnection(sevr *server.Server, conn net.Conn) {

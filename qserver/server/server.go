@@ -7,11 +7,11 @@ import (
 
 	"github.com/boltdb/bolt"
 
-	"github.com/sauravgsh16/secoc-third/proto"
-	"github.com/sauravgsh16/secoc-third/qserver/binding"
-	"github.com/sauravgsh16/secoc-third/qserver/exchange"
-	"github.com/sauravgsh16/secoc-third/qserver/queue"
-	"github.com/sauravgsh16/secoc-third/qserver/store"
+	"github.com/sauravgsh16/message-server/proto"
+	"github.com/sauravgsh16/message-server/qserver/binding"
+	"github.com/sauravgsh16/message-server/qserver/exchange"
+	"github.com/sauravgsh16/message-server/qserver/queue"
+	"github.com/sauravgsh16/message-server/qserver/store"
 )
 
 type Server struct {

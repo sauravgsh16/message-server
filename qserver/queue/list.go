@@ -82,6 +82,7 @@ func (l *List) Remove() {
 	}
 }
 
+// Front returns front element from list
 func (l *List) Front() qData {
 	if l.len == 0 {
 		return nil

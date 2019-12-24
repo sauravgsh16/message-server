@@ -1,7 +1,10 @@
 package qclient
 
-import "sync"
+import (
+	"sync"
+)
 
+// Consumers struct represent all consumers
 type Consumers struct {
 	wg          sync.WaitGroup
 	closed      chan struct{}
@@ -9,6 +12,7 @@ type Consumers struct {
 	consumerMap map[string]chan *Delivery
 }
 
+// CreateNewConsumers creates new consumer
 func CreateNewConsumers() *Consumers {
 	return &Consumers{
 		closed:      make(chan struct{}),
