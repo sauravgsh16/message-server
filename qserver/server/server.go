@@ -134,6 +134,8 @@ func (s *Server) deleteExchange(m *proto.ExchangeDelete) (uint16, error) {
 		return 404, fmt.Errorf("Exchange: %s - not found", m.Exchange)
 	}
 
+	// TODO: check if exchange is being used
+
 	// Close everything associated with the exchange
 	ex.Close()
 	delete(s.exchanges, m.Exchange)
