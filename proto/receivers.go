@@ -1596,14 +1596,14 @@ func (f *BasicPublish) Wait() bool {
 	return false
 }
 
-// GetBody gets the method frame body
-func (f *BasicPublish) GetBody() []byte {
-	return f.Body
+// GetContent gets the method frame body
+func (f *BasicPublish) GetContent() (Properties, []byte) {
+	return f.Properties, f.Body
 }
 
-// SetBody sets the method frame body
-func (f *BasicPublish) SetBody(b []byte) {
-	f.Body = b
+// SetContent sets the method frame body
+func (f *BasicPublish) SetContent(p Properties, b []byte) {
+	f.Properties, f.Body = p, b
 }
 
 func (f *BasicPublish) Read(r io.Reader) (err error) {
@@ -1671,14 +1671,14 @@ func (f *BasicReturn) Wait() bool {
 	return false
 }
 
-// GetBody gets the method frame body
-func (f *BasicReturn) GetBody() []byte {
-	return f.Body
+// GetContent gets the method frame body
+func (f *BasicReturn) GetContent() (Properties, []byte) {
+	return f.Properties, f.Body
 }
 
-// SetBody sets the method frame body
-func (f *BasicReturn) SetBody(b []byte) {
-	f.Body = b
+// SetContent sets the method frame body
+func (f *BasicReturn) SetContent(p Properties, b []byte) {
+	f.Properties, f.Body = p, b
 }
 
 func (f *BasicReturn) Read(r io.Reader) (err error) {
@@ -1747,14 +1747,14 @@ func (f *BasicDeliver) Wait() bool {
 	return false
 }
 
-// GetBody gets the method frame body
-func (f *BasicDeliver) GetBody() []byte {
-	return f.Body
+// GetContent gets the method frame body
+func (f *BasicDeliver) GetContent() (Properties, []byte) {
+	return f.Properties, f.Body
 }
 
-// SetBody sets the method frame body
-func (f *BasicDeliver) SetBody(b []byte) {
-	f.Body = b
+// SetContent sets the method frame body
+func (f *BasicDeliver) SetContent(p Properties, b []byte) {
+	f.Properties, f.Body = p, b
 }
 
 func (f *BasicDeliver) Read(r io.Reader) (err error) {

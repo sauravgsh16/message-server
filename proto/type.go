@@ -26,8 +26,8 @@ type MessageFrame interface {
 // frames which contains actual content which gets transferred
 type MessageContentFrame interface {
 	MessageFrame
-	GetBody() []byte
-	SetBody([]byte)
+	GetContent() (Properties, []byte)
+	SetContent(Properties, []byte)
 }
 
 // MessageResourceHolder interface defines the interface for

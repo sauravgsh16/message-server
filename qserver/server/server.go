@@ -14,6 +14,7 @@ import (
 	"github.com/sauravgsh16/message-server/qserver/store"
 )
 
+// Server struct
 type Server struct {
 	exchanges       map[string]*exchange.Exchange
 	queues          map[string]*queue.Queue
@@ -25,8 +26,9 @@ type Server struct {
 	queueDeleter    chan *queue.Queue
 }
 
-// INCASE - THE SERVER AND THE MESSAGE DB NEEDS TO BE SEPARATE - THIS IS THE POINT
-// WHERE WE ACCEPT TWO DIFFERENT DB PATHS.
+// TODO: INCASE - THE SERVER AND THE MESSAGE DB NEEDS TO BE SEPARATE - THIS IS THE POINT WHERE WE ACCEPT TWO DIFFERENT DB PATHS.
+
+// NewServer returns a new server
 func NewServer(dbFilePath, msgStoreFilePath string) *Server {
 	db, err := bolt.Open(dbFilePath, 0666, nil)
 	if err != nil {

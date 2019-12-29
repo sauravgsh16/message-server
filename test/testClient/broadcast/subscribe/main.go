@@ -49,6 +49,6 @@ func main() {
 	failOnError(err, "Failed to register a consumer")
 
 	for d := range msgs {
-		fmt.Printf("%s\n", d.Body)
+		fmt.Printf("%+v\n", d)
 	}
 }

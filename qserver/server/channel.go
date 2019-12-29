@@ -16,6 +16,7 @@ const (
 	chClosed
 )
 
+//
 type Channel struct {
 	id            uint16
 	server        *Server
@@ -83,7 +84,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 
 	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
-		body := mcf.GetBody()
+		prop, body := mcf.GetContent()
 		clsID, _ := mcf.Identifier()
 		size := uint64(len(body))
 
@@ -95,9 +96,10 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 
 		// Send Header
 		ch.outgoing <- &proto.HeaderFrame{
-			ChannelID: ch.id,
-			Class:     clsID,
-			BodySize:  size,
+			ChannelID:  ch.id,
+			Class:      clsID,
+			BodySize:   size,
+			Properties: prop,
 		}
 
 		// Send Body
@@ -115,7 +117,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 }
 
 func (ch *Channel) SendContent(mcf proto.MessageContentFrame, msg *proto.Message) error {
-	mcf.SetBody(msg.Payload)
+	mcf.SetContent(msg.Header.Properties, msg.Payload)
 	if err := ch.Send(mcf); err != nil {
 		return err
 	}

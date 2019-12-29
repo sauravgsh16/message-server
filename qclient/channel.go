@@ -33,6 +33,15 @@ func (c *confirms) AddListener(ch chan Confirmation) {}
 
 // TODO: to move code ends here
 
+// MetaData struct used when publishing message. Describe the metadata of the message
+type MetaDataWithBody struct {
+	ContentType   string
+	MessageID     string
+	UserID        string
+	ApplicationID string
+	Body          []byte
+}
+
 // Channel struct
 type Channel struct {
 	id         uint16
@@ -119,7 +128,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 
 	if mcf, ok := msgf.(proto.MessageContentFrame); ok {
 
-		body := mcf.GetBody()
+		prop, body := mcf.GetContent()
 		clsID, _ := mcf.Identifier()
 		size := uint64(len(body))
 
@@ -131,9 +140,10 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 
 		// Send Header
 		ch.outgoing <- &proto.HeaderFrame{
-			Class:     clsID,
-			ChannelID: ch.id,
-			BodySize:  size,
+			Class:      clsID,
+			ChannelID:  ch.id,
+			BodySize:   size,
+			Properties: prop,
 		}
 
 		// Send Body
@@ -357,7 +367,7 @@ func (ch *Channel) handleBody(bf *proto.BodyFrame) *proto.Error {
 	}
 
 	// Set MessageFrame's body with all content recieved
-	ch.bodyMf.SetBody(ch.currentMsg.Payload)
+	ch.bodyMf.SetContent(ch.currentMsg.Header.Properties, ch.currentMsg.Payload)
 
 	var err *proto.Error
 
@@ -583,12 +593,18 @@ func (ch *Channel) QueueDelete(name string, ifunused, ifempty, noWait bool) (int
 }
 
 // Publish a message
-func (ch *Channel) Publish(exchange, key string, immediate bool, body []byte) error {
+func (ch *Channel) Publish(exchange, key string, immediate bool, meta MetaDataWithBody) error {
 	bp := &proto.BasicPublish{
 		Exchange:   exchange,
 		RoutingKey: key,
 		Immediate:  immediate,
-		Body:       body,
+		Body:       meta.Body,
+		Properties: proto.Properties{
+			ContentType:   meta.ContentType,
+			MessageID:     meta.MessageID,
+			UserID:        meta.UserID,
+			ApplicationID: meta.ApplicationID,
+		},
 	}
 	ch.currentMsg = proto.NewMessage(bp)
 	if err := ch.send(bp); err != nil {

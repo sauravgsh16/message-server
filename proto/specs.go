@@ -202,6 +202,7 @@ type BasicPublish struct {
 	Exchange   string
 	RoutingKey string
 	Immediate  bool
+	Properties Properties
 	Body       []byte
 }
 
@@ -211,6 +212,7 @@ type BasicReturn struct {
 	ReplyText  string
 	Exchange   string
 	RoutingKey string
+	Properties Properties
 	Body       []byte
 }
 
@@ -220,6 +222,7 @@ type BasicDeliver struct {
 	DeliveryTag uint64
 	Exchange    string
 	RoutingKey  string
+	Properties  Properties
 	Body        []byte
 }
 

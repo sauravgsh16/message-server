@@ -35,7 +35,13 @@ func main() {
 		"test", // name
 		"",     // routing key
 		false,  // immediate
-		body,
+		qclient.MetaDataWithBody{
+			ContentType:   "text/plain",
+			MessageID:     "msgid123",
+			UserID:        "userid123",
+			ApplicationID: "appid123",
+			Body:          body,
+		},
 	)
 	failOnError(err, "Failed to publish a message")
 

@@ -58,6 +58,10 @@ func (r Reader) ReadFrame() (frame Frame, err error) {
 	return frame, nil
 }
 
+func propertySet(mask uint8, property int8) bool {
+	return int8(mask)&property > 0
+}
+
 func (r Reader) readHeader(channel uint16, size uint32) (Frame, error) {
 	hf := &HeaderFrame{
 		ChannelID: channel,
@@ -69,6 +73,37 @@ func (r Reader) readHeader(channel uint16, size uint32) (Frame, error) {
 
 	if err := binary.Read(r.R, binary.BigEndian, &hf.BodySize); err != nil {
 		return nil, err
+	}
+
+	var flags uint8
+	var err error
+
+	if err := binary.Read(r.R, binary.BigEndian, &flags); err != nil {
+		return nil, err
+	}
+
+	if propertySet(flags, flagContentType) {
+		if hf.Properties.ContentType, err = ReadShortStr(r.R); err != nil {
+			return nil, err
+		}
+	}
+
+	if propertySet(flags, flagMessageID) {
+		if hf.Properties.MessageID, err = ReadShortStr(r.R); err != nil {
+			return nil, err
+		}
+	}
+
+	if propertySet(flags, flagUserID) {
+		if hf.Properties.UserID, err = ReadShortStr(r.R); err != nil {
+			return nil, err
+		}
+	}
+
+	if propertySet(flags, flagAppID) {
+		if hf.Properties.ApplicationID, err = ReadShortStr(r.R); err != nil {
+			return nil, err
+		}
 	}
 
 	return hf, nil
@@ -110,7 +145,7 @@ func ReadLong(r io.Reader) (data uint32, err error) {
 	return data, nil
 }
 
-// ReadLongLong reads 8 bytes of data
+// ReadLongLong reads a long string
 func ReadLongLong(r io.Reader) (data uint64, err error) {
 	if err = binary.Read(r, binary.BigEndian, &data); err != nil {
 		return 0, errors.New("could not read uint64: " + err.Error())
@@ -118,7 +153,7 @@ func ReadLongLong(r io.Reader) (data uint64, err error) {
 	return data, nil
 }
 
-// ReadShortStr reads a string of 1 byte
+// ReadShortStr reads a stort string
 func ReadShortStr(r io.Reader) (data string, err error) {
 	var lenght uint8
 	if err = binary.Read(r, binary.BigEndian, &lenght); err != nil {

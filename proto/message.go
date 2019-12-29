@@ -59,9 +59,10 @@ func (mf *MethodFrame) Write(w io.Writer) error {
 
 // HeaderFrame struct represent the header frame of the message
 type HeaderFrame struct {
-	Class     uint16
-	ChannelID uint16
-	BodySize  uint64
+	Class      uint16
+	ChannelID  uint16
+	BodySize   uint64
+	Properties Properties
 }
 
 // Channel returns the channel id
@@ -79,6 +80,49 @@ func (hf *HeaderFrame) Write(w io.Writer) error {
 
 	if err := binary.Write(&payload, binary.BigEndian, hf.BodySize); err != nil {
 		return err
+	}
+
+	// Set the properties mask bits
+	var mask uint8
+
+	if len(hf.Properties.ContentType) > 0 {
+		mask = mask | flagContentType
+	}
+	if len(hf.Properties.MessageID) > 0 {
+		mask = mask | flagMessageID
+	}
+	if len(hf.Properties.UserID) > 0 {
+		mask = mask | flagUserID
+	}
+	if len(hf.Properties.ApplicationID) > 0 {
+		mask = mask | flagAppID
+	}
+
+	// Write the mask bits
+	if err := binary.Write(&payload, binary.BigEndian, mask); err != nil {
+		return err
+	}
+
+	// Write the property content
+	if propertySet(mask, flagContentType) {
+		if err := WriteShortStr(&payload, hf.Properties.ContentType); err != nil {
+			return err
+		}
+	}
+	if propertySet(mask, flagMessageID) {
+		if err := WriteShortStr(&payload, hf.Properties.MessageID); err != nil {
+			return err
+		}
+	}
+	if propertySet(mask, flagUserID) {
+		if err := WriteShortStr(&payload, hf.Properties.UserID); err != nil {
+			return err
+		}
+	}
+	if propertySet(mask, flagAppID) {
+		if err := WriteShortStr(&payload, hf.Properties.ApplicationID); err != nil {
+			return err
+		}
 	}
 
 	return writeFrame(w, FrameHeader, hf.ChannelID, payload.Bytes())
@@ -129,8 +173,22 @@ type IndexMessage struct {
 	Persisted     bool
 }
 
-// NewMessage returns a new message.
-// Take MessageContentFrame as input
+const (
+	flagContentType = 0x020
+	flagMessageID   = 0x010
+	flagUserID      = 0x008
+	flagAppID       = 0x004
+)
+
+// Properties struct
+type Properties struct {
+	ContentType   string
+	MessageID     string
+	UserID        string
+	ApplicationID string
+}
+
+// NewMessage returns a new message. Takes MessageContentFrame as input
 func NewMessage(mcf MessageContentFrame) *Message {
 	msg := &Message{
 		ID:      NextCnt(),
