@@ -32,7 +32,13 @@ func main() {
 		"",      // exchange
 		q.Queue, // routing key
 		false,   // immediate
-		[]byte(body),
+		qclient.MetaDataWithBody{
+			ContentType:   "text/plain",
+			MessageID:     "msgid123",
+			UserID:        "userid123",
+			ApplicationID: "appid123",
+			Body:          []byte(body),
+		},
 	)
 
 	log.Printf(" [x] Sent %s", body)

@@ -29,8 +29,8 @@ func main() {
 	)
 
 	q, err := ch.QueueDeclare(
-		"qtest", // name
-		false,   // noWait
+		"qtest1", // name
+		false,    // noWait
 	)
 
 	err = ch.QueueBind(
