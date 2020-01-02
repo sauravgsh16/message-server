@@ -162,7 +162,29 @@ func (c *Consumer) consumeOne() {
 
 	deliveryTag := c.chResource.GetDeliveryTag()
 
-	_, msg := c.cQueue.GetOne(c.chResource, c)
+	qm, msg := c.cQueue.GetOne(c.chResource, c)
+
+	if qm == nil {
+		return
+		/*
+			TODO: See feasibility to return BasicReturn with information
+
+			c.chResource.Send(&proto.BasicReturn{
+				ReplyCode:  313,
+				ReplyText:  "Failed to get message",
+				Exchange:   c.chResource.
+				RoutingKey: msg.Method.(*proto.BasicPublish).RoutingKey
+			})
+
+		*/
+	}
+
+	if c.noAck {
+		rhs := c.ResourceHolders()
+		if err := c.msgStore.RemoveRef(qm, c.queueName, rhs); err != nil {
+			panic("Error when trying to remove msg references")
+		}
+	}
 	/*
 		TODO
 		if !c.noAck {

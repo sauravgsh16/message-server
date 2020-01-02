@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sauravgsh16/message-server/qclient"
 )
@@ -48,7 +49,18 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	for d := range msgs {
-		fmt.Printf("%+v\n", d)
+	var counter int
+	timeout := time.After(30 * time.Second)
+
+loop:
+	for {
+		select {
+		case d := <-msgs:
+			fmt.Printf("%+v\n", d)
+			counter++
+		case <-timeout:
+			break loop
+		}
 	}
+	fmt.Printf("Total messages received: %d\n", counter)
 }

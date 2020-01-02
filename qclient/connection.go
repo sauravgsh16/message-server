@@ -15,7 +15,10 @@ import (
 	"github.com/sauravgsh16/message-server/proto"
 )
 
-const defaultConnTimeout = 30 * time.Second
+const (
+	defaultConnTimeout = 30 * time.Second
+	contentFrames      = 3
+)
 
 var (
 	ErrMaxChannel     = errors.New("max number of channels allocated")
@@ -37,18 +40,20 @@ type ConnectionStatus struct {
 
 // Connection struct
 type Connection struct {
-	destructor sync.Once
-	sendMux    sync.Mutex
-	mux        sync.Mutex
-	conn       io.ReadWriteCloser
-	channels   map[uint16]*Channel
-	outgoing   chan proto.Frame
-	incoming   chan proto.MessageFrame
-	status     ConnectionStatus
-	statusMux  sync.RWMutex
-	errors     chan *proto.Error
-	allocator  *allocate.Allocator
-	writer     *proto.Writer
+	destructor      sync.Once
+	sendMux         sync.Mutex
+	mux             sync.Mutex
+	conn            io.ReadWriteCloser
+	channels        map[uint16]*Channel
+	outgoing        chan proto.Frame
+	outgoingContent chan proto.Frame
+	incoming        chan proto.MessageFrame
+	status          ConnectionStatus
+	statusMux       sync.RWMutex
+	errors          chan *proto.Error
+	allocator       *allocate.Allocator
+	writer          *proto.Writer
+	contentWg       sync.WaitGroup
 }
 
 // Dial to connect to a listener
@@ -80,15 +85,17 @@ func dialer(netType, addr string, timeout time.Duration) (net.Conn, error) {
 // Open a connection
 func Open(conn io.ReadWriteCloser) (*Connection, error) {
 	c := &Connection{
-		conn:     conn,
-		channels: make(map[uint16]*Channel),
-		outgoing: make(chan proto.Frame),
-		incoming: make(chan proto.MessageFrame),
-		errors:   make(chan *proto.Error, 1),
-		status:   ConnectionStatus{},
-		writer:   &proto.Writer{W: bufio.NewWriter(conn)},
+		conn:            conn,
+		channels:        make(map[uint16]*Channel),
+		outgoing:        make(chan proto.Frame),
+		outgoingContent: make(chan proto.Frame),
+		incoming:        make(chan proto.MessageFrame),
+		errors:          make(chan *proto.Error, 1),
+		status:          ConnectionStatus{},
+		writer:          &proto.Writer{W: bufio.NewWriter(conn)},
 	}
 	go c.handleOutgoing()
+	go c.handleOutgoingContent()
 	go c.handleIncoming(c.conn)
 	return c, c.open()
 }
@@ -273,6 +280,23 @@ func (c *Connection) handleOutgoing() {
 	}
 }
 
+func (c *Connection) handleOutgoingContent() {
+	buf := make([]proto.Frame, 0, 3)
+	for {
+		select {
+		case frame := <-c.outgoingContent:
+			buf = append(buf, frame)
+			if len(buf) == contentFrames {
+				for _, f := range buf {
+					c.send(f)
+				}
+				buf = nil
+				c.contentWg.Done()
+			}
+		}
+	}
+}
+
 func (c *Connection) handleFrame(f proto.Frame) {
 	if f.Channel() == 0 {
 		c.dispatch0(f)
@@ -355,7 +379,7 @@ func (c *Connection) allocateChannel() (*Channel, error) {
 		return nil, ErrMaxChannel
 	}
 
-	ch := newChannel(c, uint16(id))
+	ch := newChannel(c, uint16(id), &c.contentWg)
 	c.channels[uint16(id)] = ch
 	return ch, nil
 }

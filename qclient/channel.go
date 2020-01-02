@@ -44,38 +44,42 @@ type MetaDataWithBody struct {
 
 // Channel struct
 type Channel struct {
-	id         uint16
-	destructor sync.Once
-	incoming   chan proto.Frame
-	outgoing   chan proto.Frame
-	rpc        chan proto.MessageFrame
-	conn       *Connection
-	consumers  *Consumers
-	sendMux    sync.Mutex
-	notifyMux  sync.Mutex
-	state      uint8
-	errors     chan *proto.Error
-	confirms   *confirms
-	flows      []chan bool
-	cancels    []chan string
-	closes     []chan *proto.Error
-	returns    []chan Return
-	noNotify   bool
-	currentMsg *proto.Message
-	bodyMf     proto.MessageContentFrame
-	done       chan interface{}
+	id              uint16
+	destructor      sync.Once
+	incoming        chan proto.Frame
+	outgoing        chan proto.Frame
+	outgoingContent chan proto.Frame
+	rpc             chan proto.MessageFrame
+	conn            *Connection
+	consumers       *Consumers
+	sendMux         sync.Mutex
+	notifyMux       sync.Mutex
+	state           uint8
+	errors          chan *proto.Error
+	confirms        *confirms
+	flows           []chan bool
+	cancels         []chan string
+	closes          []chan *proto.Error
+	returns         []chan Return
+	noNotify        bool
+	currentMsg      *proto.Message
+	bodyMf          proto.MessageContentFrame
+	done            chan interface{}
+	contentWg       *sync.WaitGroup
 }
 
-func newChannel(c *Connection, id uint16) *Channel {
+func newChannel(c *Connection, id uint16, wg *sync.WaitGroup) *Channel {
 	return &Channel{
-		id:        id,
-		conn:      c,
-		incoming:  make(chan proto.Frame),
-		outgoing:  c.outgoing,
-		rpc:       make(chan proto.MessageFrame),
-		consumers: CreateNewConsumers(),
-		done:      make(chan interface{}),
-		errors:    make(chan *proto.Error),
+		id:              id,
+		conn:            c,
+		incoming:        make(chan proto.Frame),
+		outgoing:        c.outgoing,
+		outgoingContent: c.outgoingContent,
+		rpc:             make(chan proto.MessageFrame),
+		consumers:       CreateNewConsumers(),
+		done:            make(chan interface{}),
+		errors:          make(chan *proto.Error),
+		contentWg:       wg,
 	}
 }
 
@@ -132,14 +136,16 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 		clsID, _ := mcf.Identifier()
 		size := uint64(len(body))
 
+		ch.contentWg.Add(1)
+
 		// Send Method
-		ch.outgoing <- &proto.MethodFrame{
+		ch.outgoingContent <- &proto.MethodFrame{
 			ChannelID: ch.id,
 			Method:    mcf,
 		}
 
 		// Send Header
-		ch.outgoing <- &proto.HeaderFrame{
+		ch.outgoingContent <- &proto.HeaderFrame{
 			Class:      clsID,
 			ChannelID:  ch.id,
 			BodySize:   size,
@@ -147,10 +153,12 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 		}
 
 		// Send Body
-		ch.outgoing <- &proto.BodyFrame{
+		ch.outgoingContent <- &proto.BodyFrame{
 			ChannelID: ch.id,
 			Body:      body,
 		}
+
+		ch.contentWg.Wait()
 
 	} else {
 		ch.outgoing <- &proto.MethodFrame{
@@ -330,6 +338,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 	if msgf, ok := mf.Method.(proto.MessageContentFrame); ok {
 		ch.currentMsg = proto.NewMessage(msgf)
 		ch.bodyMf = msgf
+		return nil
 	}
 
 	ch.dispatchRPC(mf.Method)

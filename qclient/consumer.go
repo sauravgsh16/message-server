@@ -20,11 +20,11 @@ func CreateNewConsumers() *Consumers {
 	}
 }
 
-func (c *Consumers) send(consumer string, d *Delivery) {
+func (c *Consumers) send(consumertag string, d *Delivery) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	ch, found := c.consumerMap[consumer]
+	ch, found := c.consumerMap[consumertag]
 	if found {
 		ch <- d
 	}

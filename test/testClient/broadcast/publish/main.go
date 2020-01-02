@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sauravgsh16/message-server/qclient"
 )
@@ -31,19 +32,37 @@ func main() {
 
 	body := []byte("This is a test string")
 
-	err = ch.Publish(
-		"test", // name
-		"",     // routing key
-		false,  // immediate
-		qclient.MetaDataWithBody{
-			ContentType:   "text/plain",
-			MessageID:     "msgid123",
-			UserID:        "userid123",
-			ApplicationID: "appid123",
-			Body:          body,
-		},
-	)
+	for i := 0; i < 100; i++ {
+		err = ch.Publish(
+			"test", // name
+			"",     // routing key
+			false,  // immediate
+			qclient.MetaDataWithBody{
+				ContentType:   "text/plain",
+				MessageID:     "msgid123",
+				UserID:        "userid123",
+				ApplicationID: "appid123",
+				Body:          body,
+			},
+		)
+		time.Sleep(1 * time.Millisecond)
+	}
+
 	failOnError(err, "Failed to publish a message")
 
 	fmt.Println("Success")
+	/*
+		ch.Publish(
+			"test", // name
+			"",     // routing key
+			false,  // immediate
+			qclient.MetaDataWithBody{
+				ContentType:   "text/plain",
+				MessageID:     "msgid123",
+				UserID:        "userid123",
+				ApplicationID: "appid123",
+				Body:          body,
+			},
+		)
+	*/
 }
