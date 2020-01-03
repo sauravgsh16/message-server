@@ -50,7 +50,7 @@ func main() {
 	failOnError(err, "Failed to register a consumer")
 
 	var counter int
-	timeout := time.After(20 * time.Second)
+	timeout := time.After(80 * time.Second)
 
 loop:
 	for {

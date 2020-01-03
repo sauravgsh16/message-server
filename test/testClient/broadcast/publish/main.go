@@ -32,7 +32,7 @@ func main() {
 
 	body := []byte("This is a test string")
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		err = ch.Publish(
 			"test", // name
 			"",     // routing key
@@ -45,7 +45,7 @@ func main() {
 				Body:          body,
 			},
 		)
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 	}
 
 	failOnError(err, "Failed to publish a message")
