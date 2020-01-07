@@ -22,16 +22,16 @@ func main() {
 	// defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"sendSnQueue", // name
-		false,         // no-wait
+		"hello", // name
+		false,   // no-wait
 	)
 	failOnError(err, "Failed to declare a queue")
 
 	msgs, err := ch.Consume(
-		q.Queue,          // queue
-		"sendSnConsumer", // consumer ** Need to pass **
-		true,             // noAck
-		false,            // noWait
+		q.Queue, // queue
+		"hello", // consumer ** Need to pass **
+		true,    // noAck
+		false,   // noWait
 	)
 	failOnError(err, "Failed to register a consumer")
 
