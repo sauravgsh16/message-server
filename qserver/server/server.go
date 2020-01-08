@@ -56,6 +56,7 @@ func NewServer(dbFilePath, msgStoreFilePath string) *Server {
 	return s
 }
 
+// OpenConnection starts the process of opening a tcp connection
 func (s *Server) OpenConnection(conn net.Conn) {
 	c := NewConnection(s, conn)
 	s.conns[c.id] = c

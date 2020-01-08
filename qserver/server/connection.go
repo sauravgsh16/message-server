@@ -22,10 +22,11 @@ func init() {
 	counter = time.Now().UnixNano()
 }
 
-func nextId() int64 {
+func nextID() int64 {
 	return atomic.AddInt64(&counter, 1)
 }
 
+// ConnectionStatus struct
 type ConnectionStatus struct {
 	start    bool
 	startOk  bool
@@ -36,6 +37,7 @@ type ConnectionStatus struct {
 	closedOk bool
 }
 
+// Connection struct
 type Connection struct {
 	id        int64
 	channels  map[uint16]*Channel
@@ -48,9 +50,10 @@ type Connection struct {
 	writer    *proto.Writer
 }
 
+// NewConnection returns a new connection
 func NewConnection(s *Server, n net.Conn) *Connection {
 	return &Connection{
-		id:       nextId(),
+		id:       nextID(),
 		channels: make(map[uint16]*Channel),
 		outgoing: make(chan proto.Frame),
 		server:   s,
@@ -111,9 +114,9 @@ func (c *Connection) closeConnWithError(err *proto.Error) {
 	})
 }
 
-func (c *Connection) removeChannel(chId uint16) {
+func (c *Connection) removeChannel(chID uint16) {
 	c.mux.Lock()
-	delete(c.channels, chId)
+	delete(c.channels, chID)
 	c.mux.Unlock()
 }
 

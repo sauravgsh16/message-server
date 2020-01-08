@@ -29,12 +29,12 @@ func (ch *Channel) channelRoute(msgf proto.MessageFrame) *proto.Error {
 }
 
 func (ch *Channel) channelOpen(m *proto.ChannelOpen) *proto.Error {
-	if ch.state == CH_OPEN {
+	if ch.state == chOpen {
 		clsID, mtdID := m.Identifier()
 		return proto.NewHardError(504, "channel already open", clsID, mtdID)
 	}
 	ch.Send(&proto.ChannelOpenOk{Response: "200"})
-	ch.state = CH_OPEN
+	ch.state = chOpen
 	return nil
 }
 

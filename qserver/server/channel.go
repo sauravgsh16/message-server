@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	CH_INIT = iota
-	CH_OPEN
+	chInit = iota
+	chOpen
 	chClosing
 	chClosed
 )
 
-//
+// Channel struct
 type Channel struct {
 	id            uint16
 	server        *Server
@@ -40,6 +40,7 @@ type Channel struct {
 	sizeMux       sync.Mutex
 }
 
+// NewChannel returns a new channel
 func NewChannel(id uint16, conn *Connection) *Channel {
 	return &Channel{
 		id:          id,
@@ -54,6 +55,7 @@ func NewChannel(id uint16, conn *Connection) *Channel {
 	}
 }
 
+// Send takes in a message frame and writes it on the connection
 func (ch *Channel) Send(msgf proto.MessageFrame) error {
 
 	// fmt.Printf("Sending: %s\n", msgf.MethodName())
@@ -116,6 +118,7 @@ func (ch *Channel) sendOpen(msgf proto.MessageFrame) error {
 	return nil
 }
 
+// SendContent takes in a message content frame to write on the tcp connection
 func (ch *Channel) SendContent(mcf proto.MessageContentFrame, msg *proto.Message) error {
 	mcf.SetContent(msg.Header.Properties, msg.Payload)
 	if err := ch.Send(mcf); err != nil {
@@ -124,10 +127,12 @@ func (ch *Channel) SendContent(mcf proto.MessageContentFrame, msg *proto.Message
 	return nil
 }
 
+// FlowActive returns true for active flow, false otherwise
 func (ch *Channel) FlowActive() bool {
 	return ch.flow
 }
 
+// GetDeliveryTag increments and returns the delivery tag for the message
 func (ch *Channel) GetDeliveryTag() uint64 {
 	ch.tagMux.Lock()
 	defer ch.tagMux.Unlock()
@@ -136,6 +141,8 @@ func (ch *Channel) GetDeliveryTag() uint64 {
 	return ch.deliveryTag
 }
 
+// AcquireResources increments the active size of the message being sent if less than default allowed size
+// Returns true if incremented, false otherwise
 func (ch *Channel) AcquireResources(qm *proto.QueueMessage) bool {
 	ch.sizeMux.Lock()
 	defer ch.sizeMux.Unlock()
@@ -147,6 +154,7 @@ func (ch *Channel) AcquireResources(qm *proto.QueueMessage) bool {
 	return false
 }
 
+// ReleaseResources decrements the active message size by the current message being sent
 func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
 	ch.sizeMux.Lock()
 	defer ch.sizeMux.Unlock()
@@ -156,7 +164,7 @@ func (ch *Channel) ReleaseResources(qm *proto.QueueMessage) {
 
 func (ch *Channel) start() {
 	if ch.state == 0 && ch.id == 0 {
-		ch.state = CH_OPEN
+		ch.state = chOpen
 		go ch.startConnection()
 	}
 
@@ -343,7 +351,7 @@ func (ch *Channel) startConnection() *proto.Error {
 func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 
 	// Check if channel is in initial creation state
-	if ch.state == CH_INIT && (mf.ClassID != 20 || mf.MethodID != 10) {
+	if ch.state == chInit && (mf.ClassID != 20 || mf.MethodID != 10) {
 		return proto.NewHardError(503, "Open method call on non-open channel", mf.ClassID, mf.MethodID)
 	}
 
