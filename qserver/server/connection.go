@@ -104,7 +104,7 @@ func (c *Connection) hardClose() {
 }
 
 func (c *Connection) closeConnWithError(err *proto.Error) {
-	fmt.Println("Sending connection close: ", err.Msg)
+	fmt.Println("Sending connection close: ", err.Msg, err.Class, err.Method)
 	c.status.closing = true
 	c.channels[0].Send(&proto.ConnectionClose{
 		ReplyCode: err.Code,

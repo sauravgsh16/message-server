@@ -2,6 +2,7 @@ package proto
 
 import (
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -587,6 +588,8 @@ func (f *ExchangeDeclare) Read(r io.Reader) (err error) {
 
 func (f *ExchangeDeclare) Write(w io.Writer) (err error) {
 
+	fmt.Printf("Exchange Declare - writing %s, %s\n", f.Exchange, f.Type)
+
 	if err = WriteLongStr(w, f.Exchange); err != nil {
 		return errors.New("could not write Exchange in ExchangeDeclare: " + err.Error())
 	}
@@ -991,6 +994,8 @@ func (f *QueueDeclare) Read(r io.Reader) (err error) {
 
 func (f *QueueDeclare) Write(w io.Writer) (err error) {
 
+	fmt.Printf("Queue Declare - writing %s, %t\n", f.Queue, f.NoWait)
+
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Exchange in QueueDeclare: " + err.Error())
 	}
@@ -1113,6 +1118,8 @@ func (f *QueueBind) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueBind) Write(w io.Writer) (err error) {
+
+	fmt.Printf("Queue Bind - writing %s, %s, %s\n", f.Queue, f.Exchange, f.RoutingKey)
 
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Destination in QueueBind: " + err.Error())

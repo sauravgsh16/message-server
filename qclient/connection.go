@@ -3,6 +3,7 @@ package qclient
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -140,7 +141,7 @@ func (c *Connection) send(f proto.Frame) error {
 func (c *Connection) call(req proto.MessageFrame, resp ...proto.MessageFrame) error {
 	if req != nil {
 
-		// fmt.Println("Sending", req.MethodName())
+		fmt.Println("Sending", req.MethodName())
 
 		if err := c.send(&proto.MethodFrame{ChannelID: uint16(0), Method: req}); err != nil {
 			return err
@@ -331,7 +332,7 @@ func (c *Connection) dispatchN(f proto.Frame) {
 
 func (c *Connection) routeMethod(mf *proto.MethodFrame) *proto.Error {
 
-	// fmt.Println("Received", mf.Method.MethodName())
+	fmt.Println("Received", mf.Method.MethodName())
 
 	clsID, mtdID := mf.Method.Identifier()
 

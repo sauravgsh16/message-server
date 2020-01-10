@@ -58,7 +58,7 @@ func NewChannel(id uint16, conn *Connection) *Channel {
 // Send takes in a message frame and writes it on the connection
 func (ch *Channel) Send(msgf proto.MessageFrame) error {
 
-	// fmt.Printf("Sending: %s\n", msgf.MethodName())
+	fmt.Printf("Sending: %s\n", msgf.MethodName())
 
 	if ch.state == chClosed {
 		return ch.sendClosed(msgf)
@@ -355,7 +355,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 		return proto.NewHardError(503, "Open method call on non-open channel", mf.ClassID, mf.MethodID)
 	}
 
-	// fmt.Println("Received", mf.Method.MethodName())
+	fmt.Println("Received", mf.Method.MethodName())
 
 	// Route methodFrame based on clsID
 	switch mf.ClassID {

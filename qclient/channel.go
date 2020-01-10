@@ -1,6 +1,7 @@
 package qclient
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -115,7 +116,7 @@ func (ch *Channel) call(req proto.MessageFrame, resp ...proto.MessageFrame) erro
 
 func (ch *Channel) send(msgf proto.MessageFrame) error {
 
-	// fmt.Printf("Sending: %s\n", msgf.MethodName())
+	fmt.Printf("Sending: %s\n", msgf.MethodName())
 
 	if ch.state == chClosed {
 		return ch.sendClosed(msgf)
