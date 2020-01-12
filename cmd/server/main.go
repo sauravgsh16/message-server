@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -17,7 +17,7 @@ func handleConnection(sevr *server.Server, conn net.Conn) {
 func main() {
 	wd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Failed to get wd: %v", err)
+		log.Printf("Failed to get wd: %v", err)
 		os.Exit(1)
 	}
 	serverDB := filepath.Join(wd, "server.db")
@@ -26,19 +26,19 @@ func main() {
 	sevr := server.NewServer(serverDB, msgStoreDB)
 	ln, err := net.Listen("tcp", constant.UnsecuredPort)
 	if err != nil {
-		fmt.Printf("Error: %v", err)
+		log.Printf("Error: %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Listening on port %s\n", constant.UnsecuredPort)
+	log.Printf("Message server listening on port %s\n", constant.UnsecuredPort)
 
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Printf("Error accepting connection\n")
+			log.Println("Error accepting connection")
 			os.Exit(1)
 		}
-		fmt.Printf("Accepted conn: %+v\n", conn.LocalAddr())
+		log.Printf("Accepted conn: %+v\n", conn.LocalAddr())
 		go handleConnection(sevr, conn)
 	}
 }
