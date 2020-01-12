@@ -18,6 +18,7 @@ func main() {
 	wd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Failed to get wd: %v", err)
+		os.Exit(1)
 	}
 	serverDB := filepath.Join(wd, "server.db")
 	msgStoreDB := filepath.Join(wd, "messages.db")
@@ -37,7 +38,7 @@ func main() {
 			fmt.Printf("Error accepting connection\n")
 			os.Exit(1)
 		}
-		fmt.Printf("Accepted conn: %+v\n", conn)
+		fmt.Printf("Accepted conn: %+v\n", conn.LocalAddr())
 		go handleConnection(sevr, conn)
 	}
 }
