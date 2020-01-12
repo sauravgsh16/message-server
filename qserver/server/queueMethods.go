@@ -33,7 +33,7 @@ func (ch *Channel) qDeclare(m *proto.QueueDeclare) *proto.Error {
 	clsID, mtdID := m.Identifier()
 
 	// Check if Queue already exists
-	q, found := ch.conn.server.queues[m.Queue]
+	q, found := ch.conn.server.getQueue(m.Queue)
 	if found {
 		qsize := uint32(q.Len())
 		csize := q.ConsumerCount()
