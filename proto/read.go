@@ -195,6 +195,7 @@ func (r Reader) readMethod(channelID uint16, size uint32) (Frame, error) {
 	}
 
 	var err error
+	var method MessageFrame
 
 	if mf.ClassID, err = ReadShort(r.R); err != nil {
 		return nil, err
@@ -208,361 +209,158 @@ func (r Reader) readMethod(channelID uint16, size uint32) (Frame, error) {
 	case mf.ClassID == 10:
 		switch {
 		case mf.MethodID == 10:
-			method := &ConnectionStart{}
-			if err = method.Read(r.R); err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionStart{}
 
 		case mf.MethodID == 11:
-			method := &ConnectionStartOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionStartOk{}
+
 		case mf.MethodID == 20:
-			method := &ConnectionOpen{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionOpen{}
 
 		case mf.MethodID == 21:
-			method := &ConnectionOpenOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionOpenOk{}
 
 		case mf.MethodID == 30:
-			method := &ConnectionClose{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionClose{}
 
 		case mf.MethodID == 31:
-			method := &ConnectionCloseOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ConnectionCloseOk{}
 		}
 
 	case mf.ClassID == 20:
 		switch {
 		case mf.MethodID == 10:
-			method := &ChannelOpen{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelOpen{}
 
 		case mf.MethodID == 11:
-			method := &ChannelOpenOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelOpenOk{}
+
 		case mf.MethodID == 20:
-			method := &ChannelFlow{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelFlow{}
 
 		case mf.MethodID == 21:
-			method := &ChannelFlowOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelFlowOk{}
 
 		case mf.MethodID == 30:
-			method := &ChannelClose{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelClose{}
 
 		case mf.MethodID == 31:
-			method := &ChannelCloseOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ChannelCloseOk{}
 		}
 
 	case mf.ClassID == 30:
 		switch {
 		case mf.MethodID == 10:
-			method := &ExchangeDeclare{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeDeclare{}
 
 		case mf.MethodID == 11:
-			method := &ExchangeDeclareOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeDeclareOk{}
+
 		case mf.MethodID == 20:
-			method := &ExchangeDelete{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeDelete{}
 
 		case mf.MethodID == 21:
-			method := &ExchangeDeleteOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeDeleteOk{}
 
 		case mf.MethodID == 30:
-			method := &ExchangeBind{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeBind{}
 
 		case mf.MethodID == 31:
-			method := &ExchangeBindOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeBindOk{}
 
 		case mf.MethodID == 40:
-			method := &ExchangeUnbind{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeUnbind{}
 
 		case mf.MethodID == 41:
-			method := &ExchangeUnbindOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &ExchangeUnbindOk{}
 		}
 
 	case mf.ClassID == 40:
 		switch {
 		case mf.MethodID == 10:
-			method := &QueueDeclare{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueDeclare{}
 
 		case mf.MethodID == 11:
-			method := &QueueDeclareOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueDeclareOk{}
+
 		case mf.MethodID == 20:
-			method := &QueueBind{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueBind{}
 
 		case mf.MethodID == 21:
-			method := &QueueBindOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueBindOk{}
 
 		case mf.MethodID == 30:
-			method := &QueueUnbind{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueUnbind{}
 
 		case mf.MethodID == 31:
-			method := &QueueUnbindOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueUnbindOk{}
 
 		case mf.MethodID == 40:
-			method := &QueueDelete{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueDelete{}
 
 		case mf.MethodID == 41:
-			method := &QueueDeleteOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &QueueDeleteOk{}
 		}
 
 	case mf.ClassID == 50:
 		switch {
 		case mf.MethodID == 10:
-			method := &BasicConsume{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicConsume{}
 
 		case mf.MethodID == 11:
-			method := &BasicConsumeOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicConsumeOk{}
 		case mf.MethodID == 20:
-			method := &BasicCancel{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicCancel{}
 
 		case mf.MethodID == 21:
-			method := &BasicCancelOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicCancelOk{}
 
 		case mf.MethodID == 30:
-			method := &BasicPublish{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicPublish{}
 
 		case mf.MethodID == 40:
-			method := &BasicReturn{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicReturn{}
 
 		case mf.MethodID == 50:
-			method := &BasicDeliver{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicDeliver{}
 
 		case mf.MethodID == 60:
-			method := &BasicAck{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicAck{}
 
 		case mf.MethodID == 70:
-			method := &BasicNack{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &BasicNack{}
 		}
 
 	case mf.ClassID == 60:
 		switch {
 		case mf.MethodID == 10:
-			method := &TxSelect{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxSelect{}
 
 		case mf.MethodID == 11:
-			method := &TxSelectOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxSelectOk{}
+
 		case mf.MethodID == 20:
-			method := &TxCommit{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxCommit{}
 
 		case mf.MethodID == 21:
-			method := &TxCommitOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxCommitOk{}
 
 		case mf.MethodID == 30:
-			method := &TxRollback{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxRollback{}
 
 		case mf.MethodID == 31:
-			method := &TxRollbackOk{}
-			err = method.Read(r.R)
-			if err != nil {
-				return nil, err
-			}
-			mf.Method = method
+			method = &TxRollbackOk{}
 		}
 	default:
 		return nil, fmt.Errorf("Bad class or method id!. Class id: %d, Method id: %d", mf.ClassID, mf.MethodID)
 
 	}
+
+	err = method.Read(r.R)
+	if err != nil {
+		return nil, err
+	}
+	mf.Method = method
 
 	return mf, nil
 }
