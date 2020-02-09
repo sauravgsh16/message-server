@@ -332,7 +332,7 @@ func (c *Connection) dispatchN(f proto.Frame) {
 
 func (c *Connection) routeMethod(mf *proto.MethodFrame) *proto.Error {
 
-	fmt.Println("Received", mf.Method.MethodName())
+	fmt.Println("Received: ", mf.Method.MethodName())
 
 	clsID, mtdID := mf.Method.Identifier()
 

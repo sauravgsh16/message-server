@@ -355,7 +355,7 @@ func (ch *Channel) handleMethod(mf *proto.MethodFrame) *proto.Error {
 		return proto.NewHardError(503, "Open method call on non-open channel", mf.ClassID, mf.MethodID)
 	}
 
-	fmt.Println("Received", mf.Method.MethodName())
+	fmt.Println("Received: ", mf.Method.MethodName())
 
 	// Route methodFrame based on clsID
 	switch mf.ClassID {
