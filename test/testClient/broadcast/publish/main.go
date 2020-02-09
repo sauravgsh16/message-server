@@ -32,7 +32,7 @@ func main() {
 
 	body := []byte("This is a test string")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1; i++ {
 		err = ch.Publish(
 			"test", // name
 			"",     // routing key

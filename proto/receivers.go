@@ -993,9 +993,6 @@ func (f *QueueDeclare) Read(r io.Reader) (err error) {
 }
 
 func (f *QueueDeclare) Write(w io.Writer) (err error) {
-
-	fmt.Printf("Queue Declare - writing %s, %t\n", f.Queue, f.NoWait)
-
 	if err = WriteLongStr(w, f.Queue); err != nil {
 		return errors.New("could not write Exchange in QueueDeclare: " + err.Error())
 	}

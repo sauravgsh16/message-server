@@ -315,7 +315,7 @@ func (ch *Channel) dispatchRPC(msgf proto.MessageFrame) *proto.Error {
 		ch.consumers.cancel(m.ConsumerTag)
 
 	case *proto.BasicReturn:
-		p := fmt.Sprintf("Not implemented %#v", m)
+		p := fmt.Sprintf("Not implemented %#v\n", m)
 		panic(p)
 
 	case *proto.BasicAck:
